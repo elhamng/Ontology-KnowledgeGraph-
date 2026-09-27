@@ -83,8 +83,8 @@ Data steward sees dashboard → fixes data in source system → re-runs validati
 ```python
 Check Type | Description | Example
 -----------|-------------|----------
-mandatory | Required field present? | Voornaam NOT NULL → 50 missing
-datatype | Type correct? | Geboortedatum as xsd:date → 2 format errors
+mandatory | Required field present? | FirstName NOT NULL → 50 missing
+datatype | Type correct? | DateOfBirth as xsd:date → 2 format errors
 fk_integrity | Foreign key exists? | EmployeeId in ProjectAssignment exists in Employee → 0 orphans
 ```
 

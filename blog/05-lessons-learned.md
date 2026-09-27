@@ -55,7 +55,7 @@ Same thing, three different interpretations.
    - "Every employee must have a birth date on file. If an employee record is missing a birth date, it gets flagged as incomplete."
 
 2. **For data teams**: SQL constraints
-   - "Column `Geboortedatum` is NOT NULL. If an insert tries to skip it, the insert fails."
+   - "Column `DateOfBirth` is NOT NULL. If an insert tries to skip it, the insert fails."
 
 3. **For semantic teams**: OWL
    - `corp:Person` has `owl:minCardinality 1` on `corp:hasDateOfBirth` with range `xsd:date`
@@ -64,8 +64,8 @@ Keep a "translation table" in your documentation:
 
 | Business Language | SQL | OWL |
 |---|---|---|
-| "Employee must have birth date" | Geboortedatum NOT NULL | Human minCardinality 1 hasDateOfBirth |
-| "Birth date must be in the past" | CHECK(Geboortedatum < GETDATE()) | hasDateOfBirth rdfs:range xsd:date with temporal constraint |
+| "Employee must have birth date" | DateOfBirth NOT NULL | Person minCardinality 1 hasDateOfBirth |
+| "Birth date must be in the past" | CHECK(DateOfBirth < GETDATE()) | hasDateOfBirth rdfs:range xsd:date with temporal constraint |
 | "Employee can have multiple assignments" | Employee 1:N ProjectAssignment | Employee 0..* hasAssignment Assignment |
 
 ---
@@ -122,7 +122,7 @@ def parse_date_robust(val):
     return None
 
 # Usage
-df['Geboortedatum_clean'] = df['Geboortedatum'].apply(parse_date_robust)
+df['DateOfBirth_clean'] = df['DateOfBirth'].apply(parse_date_robust)
 ```
 
 ### Result
@@ -137,11 +137,11 @@ df['Geboortedatum_clean'] = df['Geboortedatum'].apply(parse_date_robust)
 If you see this error:
 ```
 Rule: FK integrity check
-Table: Werkovereenkomst
-Error: 47 records reference Medewerker.MedewerkerId that doesn't exist
+Table: ProjectAssignment
+Error: 47 records reference Employee.EmployeeId that doesn't exist
 ```
 
-**This usually means**: Data is being inserted into Werkovereenkomst before Medewerker is fully loaded. Or there's a truncation/deletion mid-pipeline.
+**This usually means**: Data is being inserted into ProjectAssignment before Employee is fully loaded. Or there's a truncation/deletion mid-pipeline.
 
 Foreign key validation catches **orchestration problems**, not just data quality issues.
 

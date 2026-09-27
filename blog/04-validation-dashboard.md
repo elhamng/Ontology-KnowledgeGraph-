@@ -88,7 +88,7 @@ def validate_csv(csv_file, mapping_file):
             results.append({
                 'rule_number': f"{constraint['DOMAIN']}_R{len(results)+1}",
                 'check_kind': 'mandatory',
-                'cdm_table': 'Medewerker',
+                'cdm_table': 'Employee',
                 'cdm_field': col_name,
                 'total': total_count,
                 'pass': total_count - missing_count,
@@ -109,7 +109,7 @@ def validate_csv(csv_file, mapping_file):
             results.append({
                 'rule_number': f"{constraint['DOMAIN']}_R{len(results)+1}",
                 'check_kind': 'datatype',
-                'cdm_table': 'Medewerker',
+                'cdm_table': 'Employee',
                 'cdm_field': col_name,
                 'total': len(df),
                 'pass': len(df) - date_errors,
@@ -151,30 +151,30 @@ def csv_to_rdf(csv_file, mapping_file, output_ttl):
     g = Graph()
     
     # Bind namespaces
-ONZ_G = Namespace('http://corporate.example.org/ontology#')
-    ONZ_PERS = Namespace('http://corporate.example.org/ontology#')
-    ONZ_ZORG = Namespace('http://corporate.example.org/ontology#')
+    CORP_CORE = Namespace('http://corporate.example.org/ontology#')
+    CORP_PERSONNEL = Namespace('http://corporate.example.org/ontology#')
+    CORP_BUSINESS = Namespace('http://corporate.example.org/ontology#')
 
-    g.bind('corp', ONZ_G)
-    g.bind('corp', ONZ_PERS)
-    g.bind('corp', ONZ_ZORG)
+    g.bind('corp', CORP_CORE)
+    g.bind('corp-personnel', CORP_PERSONNEL)
+    g.bind('corp-business', CORP_BUSINESS)
     
     # For each row
     for idx, row in df.iterrows():
         # Create individual URI
         person_id = row['EmployeeId']
-        uri = URIRef(f"{BIZ}employee{person_id}")
+        uri = URIRef(f"{CORP_CORE}employee{person_id}")
         
         # Add type
-        g.add((uri, RDF.type, ONZ_G.Human))
+        g.add((uri, RDF.type, CORP_CORE.Person))
         
         # Add properties with type casting
-        g.add((uri, RDFS.label, Literal(f"{row['Voornaam']}")))
+        g.add((uri, RDFS.label, Literal(f"{row['FirstName']}")))
         
-        if pd.notna(row['Geboortedatum']):
+        if pd.notna(row['DateOfBirth']):
             # Parse and cast to xsd:date
-            birth_date = datetime.strptime(str(row['Geboortedatum']), '%Y-%m-%d').date()
-            g.add((uri, ONZ_G.hasDateOfBirth, Literal(birth_date, datatype=XSD.date)))
+            birth_date = datetime.strptime(str(row['DateOfBirth']), '%Y-%m-%d').date()
+            g.add((uri, CORP_CORE.hasDateOfBirth, Literal(birth_date, datatype=XSD.date)))
     
     # Serialize to Turtle
     g.serialize(destination=output_ttl, format='turtle')

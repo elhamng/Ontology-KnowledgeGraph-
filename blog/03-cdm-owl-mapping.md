@@ -193,15 +193,15 @@ def build_version_coverage_matrix(mapping_file, ontology_versions):
 
 # Output:
 # table          | v1.3.2 | v1.3.4 | v2.0.0
-# Medewerker     | ✓ (8)  | ✓ (8)  | ✓ (9)    # v2 added 1 constraint
-# Werkovereenkomst | ✓ (5) | ✓ (6)  | ✗        # v2 removed this table
-# VerpleegProcess | ✗      | ✓ (4)  | ✓ (4)    # New in v1.3.4
+# Employee     | ✓ (8)  | ✓ (8)  | ✓ (9)    # v2 added 1 constraint
+# ProjectAssignment | ✓ (5) | ✓ (6)  | ✗        # v2 removed this table
+# ClientProject | ✗      | ✓ (4)  | ✓ (4)    # New in v1.3.4
 ```
 
 This tells you:
-- **Medewerker**: Same in all versions (can upgrade anytime)
-- **Werkovereenkomst**: Removed in v2 (breaking change, needs code review)
-- **VerpleegProcess**: New in v1.3.4 (don't reference in old code)
+- **Employee**: Same in all versions (can upgrade anytime)
+- **ProjectAssignment**: Removed in v2 (breaking change, needs code review)
+- **ClientProject**: New in v1.3.4 (don't reference in old code)
 
 ---
 
@@ -221,7 +221,7 @@ The mapping enables **traceability in both directions**:
 
 **Answer** (via mapping):
 - Birth date constraint changes from `minCardinality 1` → `minCardinality 0`
-- CDM column `Geboortedatum` changes from `NOT NULL` → `NULL`
+- CDM column `DateOfBirth` changes from `NOT NULL` → `NULL`
 - All validation rules that check "birth date is required" must be updated
 - Indicators 1.1, 3.2, 5.0 must be re-tested
 
