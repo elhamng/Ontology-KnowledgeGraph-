@@ -58,7 +58,7 @@ Same thing, three different interpretations.
    - "Column `Geboortedatum` is NOT NULL. If an insert tries to skip it, the insert fails."
 
 3. **For semantic teams**: OWL
-   - `onz-g:Human` has `owl:minCardinality 1` on `onz-g:hasDateOfBirth` with range `xsd:date`
+   - `corp:Person` has `owl:minCardinality 1` on `corp:hasDateOfBirth` with range `xsd:date`
 
 Keep a "translation table" in your documentation:
 

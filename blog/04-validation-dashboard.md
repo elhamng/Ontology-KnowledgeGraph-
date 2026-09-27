@@ -151,13 +151,13 @@ def csv_to_rdf(csv_file, mapping_file, output_ttl):
     g = Graph()
     
     # Bind namespaces
-    ONZ_G = Namespace('http://purl.org/ozo/onz-g#')
-    ONZ_PERS = Namespace('http://purl.org/ozo/onz-pers#')
-    ONZ_ZORG = Namespace('http://purl.org/ozo/onz-zorg#')
-    
-    g.bind('onz-g', ONZ_G)
-    g.bind('onz-pers', ONZ_PERS)
-    g.bind('onz-zorg', ONZ_ZORG)
+ONZ_G = Namespace('http://corporate.example.org/ontology#')
+    ONZ_PERS = Namespace('http://corporate.example.org/ontology#')
+    ONZ_ZORG = Namespace('http://corporate.example.org/ontology#')
+
+    g.bind('corp', ONZ_G)
+    g.bind('corp', ONZ_PERS)
+    g.bind('corp', ONZ_ZORG)
     
     # For each row
     for idx, row in df.iterrows():
@@ -185,15 +185,15 @@ csv_to_rdf('data/Employee.csv', 'cdm-owl-mapping.csv', 'output/employee.ttl')
 
 **Output Example** (`employee.ttl`):
 ```turtle
-@prefix biz: <http://business.example.org/ontology#> .
+@prefix corp: <http://corporate.example.org/ontology#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-biz:employee123 a biz:Person ;
+corp:employee123 a corp:Person ;
     rdfs:label "John" ;
-    biz:hasDateOfBirth "1985-03-15"^^xsd:date .
+    corp:hasDateOfBirth "1985-03-15"^^xsd:date .
 
-biz:employee124 a biz:Person ;
+corp:employee124 a corp:Person ;
     rdfs:label "Jane" .
     # Note: no birth date (null)
 ```

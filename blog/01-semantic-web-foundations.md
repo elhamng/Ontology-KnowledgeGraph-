@@ -15,13 +15,13 @@ RDF represents everything as **triples**: `(subject, predicate, object)`.
 ### Real Healthcare Example
 
 ```turtle
-onz-zorg:medewerker123 a onz-g:Human .
-onz-zorg:medewerker123 rdfs:label "Employee 123" .
-onz-zorg:medewerker123 onz-g:hasDateOfBirth "1985-03-15"^^xsd:date .
+corp:employee123 a corp:Person .
+corp:employee123 rdfs:label "Employee 123" .
+corp:employee123 corp:hasDateOfBirth "1985-03-15"^^xsd:date .
 ```
 
 This says:
-- **Subject**: `biz:employee123` (a unique identifier using a URI)
+- **Subject**: `corp:employee123` (a unique identifier using a URI)
 - **Predicate**: `rdfs:label` (a property name)
 - **Object**: `"Employee 123"` (a value)
 
@@ -30,7 +30,7 @@ This says:
 Instead of saying "Employee ID 123" (which could mean different things in different systems), we use a **URI** (Uniform Resource Identifier):
 
 ```
-http://purl.org/ozo/onz-zorg#medewerker123
+http://corporate.example.org/ontology#employee123
 ```
 
 This URI is:
@@ -43,14 +43,14 @@ This URI is:
 Multiple triples form a **graph**:
 
 ```turtle
-onz-zorg:medewerker123 a onz-g:Human ;
+corp:employee123 a corp:Person ;
     rdfs:label "John Doe" ;
-    onz-g:hasDateOfBirth "1985-03-15"^^xsd:date ;
-    onz-pers:worksAt onz-org:vestiging456 .
+    corp:hasDateOfBirth "1985-03-15"^^xsd:date ;
+    corp:worksAt corp:office456 .
 
-onz-org:vestiging456 a onz-org:Vestiging ;
+corp:office456 a corp:OfficeLocation ;
     rdfs:label "Regional Medical Center" ;
-    onz-g:hasAddress "42 Healthcare Avenue, Central Region" .
+    corp:hasAddress "42 Healthcare Avenue, Central Region" .
 ```
 
 Now the **graph shows relationships**: Employee 123 works at Office Location 456. These are not separate tables—they're linked by shared URIs.
@@ -66,7 +66,7 @@ OWL defines the **rules and structure** that RDF data should follow. It answers:
 A class is a category of thing:
 
 ```turtle
-onz-g:Human a owl:Class ;
+corp:Human a owl:Class ;
     rdfs:label "Human Being"@en ;
     rdfs:comment "A person in the healthcare system"@en .
 ```
@@ -76,8 +76,8 @@ onz-g:Human a owl:Class ;
 Properties define relationships:
 
 ```turtle
-onz-g:hasDateOfBirth a owl:DatatypeProperty ;
-    rdfs:domain onz-g:Human ;
+corp:hasDateOfBirth a owl:DatatypeProperty ;
+    rdfs:domain corp:Person ;
     rdfs:range xsd:date ;
     rdfs:label "has date of birth"@en .
 ```
@@ -91,9 +91,9 @@ This says:
 How many times can a property appear?
 
 ```turtle
-onz-g:Human rdfs:subClassOf [
+corp:Person rdfs:subClassOf [
     a owl:Restriction ;
-    owl:onProperty onz-g:hasDateOfBirth ;
+    owl:onProperty corp:hasDateOfBirth ;
     owl:minCardinality 1 ;  # At least one
     owl:maxCardinality 1 .  # At most one
 ] .
@@ -137,14 +137,14 @@ For healthcare and finance, you need **OWL**, not SKOS or Dublin Core. SKOS is t
 SPARQL is like SQL, but for RDF graphs:
 
 ```sparql
-PREFIX onz-g: <http://purl.org/ozo/onz-g#>
-PREFIX onz-org: <http://purl.org/ozo/onz-org#>
+PREFIX corp: <http://corporate.example.org/ontology#>
+PREFIX corp-org: <http://corporate.example.org/org#>
 
 SELECT ?employee ?workplace
 WHERE {
-    ?employee a onz-g:Human ;
-              onz-pers:worksAt ?workplace .
-    ?workplace a biz:OfficeLocation .
+    ?employee a corp:Person ;
+              corp:worksAt ?workplace .
+    ?workplace a corp:OfficeLocation .
 }
 ```
 
@@ -159,7 +159,7 @@ This finds: "Which employees work at which care centers?"
 - Hospital B calls it "Staff Number"
 - They're the same thing, but systems can't talk about it
 
-**Semantic Web Solution**: Use shared URIs. Both systems reference `http://business.example.org/ontology#employee123`.
+**Semantic Web Solution**: Use shared URIs. Both systems reference `http://corporate.example.org/ontology#employee123`.
 
 ### Problem 2: Regulatory Requirements
 Healthcare has strict rules:

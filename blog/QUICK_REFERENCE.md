@@ -48,15 +48,15 @@ LAYER 3: Data Validation & Visualization
 
 ### Step 1: Update OWL Ontology
 ```turtle
-onz-g:hasNationality a owl:DatatypeProperty ;
-    rdfs:domain onz-g:Human ;
+corp:hasNationality a owl:DatatypeProperty ;
+    rdfs:domain corp:Person ;
     rdfs:range xsd:string ;
     owl:minCardinality 1 .
 ```
 
 ### Step 2: Update Mapping CSV
 ```
-Personnel | Employee | EmergencyContact | biz:Person | biz:hasEmergencyContact | xsd:string | 1..1 | Mandatory
+Personnel | Employee | EmergencyContact | corp:Person | corp:hasEmergencyContact | xsd:string | 1..1 | Mandatory
 ```
 
 ### Step 3: Run Pipeline
@@ -148,8 +148,8 @@ hrflow:employee123 owl:sameAs care:person456 .
 
 **Solution**: Query with date filter
 ```sparql
-?contract onz-g:startDate ?start ;
-          onz-g:endDate ?end .
+?contract corp:startDate ?start ;
+          corp:endDate ?end .
 FILTER (?start <= ?targetDate && (?end > ?targetDate || !BOUND(?end)))
 ```
 
@@ -158,8 +158,8 @@ FILTER (?start <= ?targetDate && (?end > ?targetDate || !BOUND(?end)))
 
 **Solution**: Build graph with explicit relationships
 ```turtle
-office123 biz:partOf region_north .
-region_north onz-org:partOf country_nl .
+office123 corp:partOf region_north .
+region_north corp:partOf country_nl .
 ```
 
 ### Pattern 4: Validation at Different Stages

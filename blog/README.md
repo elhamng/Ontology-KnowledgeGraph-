@@ -94,7 +94,7 @@ All posts use consistent healthcare domain examples:
 - **Entities**: Employee, ProjectAssignment, OfficeLocation, ClientProject, BillingEntry
 - **Properties**: Birth date (`hasDateOfBirth`), start date (`startDate`), end date (`endDate`), address (`hasAddress`)
 - **Data types**: `xsd:date`, `xsd:string`, `xsd:decimal`
-- **Namespaces**: `onz-g` (general), `onz-pers` (personnel), `onz-zorg` (care), `onz-fin` (finance)
+- **Namespaces**: `corp:` (all concepts in single corporate namespace)
 
 **The Running Story**:
 - Start: You have 24 business indicators defined in markdown

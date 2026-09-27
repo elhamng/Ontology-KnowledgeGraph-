@@ -26,13 +26,13 @@ You have 24 business indicators (requirements) defined in markdown:
 What is the average number of healthcare workers per care center?
 
 ## Concepts
-- [Employee](http://purl.org/ozo/onz-g#Human)
-- [Works at](http://purl.org/ozo/onz-g#worksAt)
+- [Employee](http://corporate.example.org/ontology#Person)
+- [Works at](http://corporate.example.org/ontology#worksAt)
 - [Office Location](http://business.example.org/ontology#OfficeLocation)
 
 ## Properties
-- [Birth date](http://purl.org/ozo/onz-g#hasDateOfBirth)
-- [Employment status](http://purl.org/ozo/onz-pers#employmentStatus)
+- [Birth date](http://corporate.example.org/ontology#hasDateOfBirth)
+- [Employment status](http://corporate.example.org/ontology#employmentStatus)
 ```
 
 **Current pain points**:
@@ -76,13 +76,13 @@ from pathlib import Path
 def extract_concepts_from_markdown(md_file):
     """
     Parse markdown and extract OWL concept links.
-    Looks for: [Label](http://purl.org/ozo/onz-xxx#ConceptName)
+    Looks for: [Label](http://corporate.example.org/ontology#ConceptName)
     """
     with open(md_file, encoding='utf-8') as f:
         content = f.read()
     
-    # Pattern: [text](http://purl.org/ozo/...#ConceptName)
-    pattern = r'\[([^\]]+)\]\((http://purl\.org/ozo/[^)]+)\)'
+    # Pattern: [text](http://corporate.example.org/ontology#ConceptName)
+    pattern = r'\[([^\]]+)\]\((http://corporate\.example\.org/ontology/[^)]+)\)'
     matches = re.findall(pattern, content)
     
     concepts = []
@@ -100,8 +100,8 @@ def extract_concepts_from_markdown(md_file):
 indicator_file = 'indicators/indicator_1.1.md'
 concepts = extract_concepts_from_markdown(indicator_file)
 # Result: [
-#   {'label': 'Employee', 'uri': 'http://purl.org/ozo/onz-g#Human', 'concept_name': 'Human'},
-#   {'label': 'Works at', 'uri': 'http://purl.org/ozo/onz-g#worksAt', 'concept_name': 'worksAt'},
+#   {'label': 'Employee', 'uri': 'http://corporate.example.org/ontology#Person', 'concept_name': 'Person'},
+#   {'label': 'Works at', 'uri': 'http://corporate.example.org/ontology#worksAt', 'concept_name': 'worksAt'},
 #   ...
 # ]
 ```

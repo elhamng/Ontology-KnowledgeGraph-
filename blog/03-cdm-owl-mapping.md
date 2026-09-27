@@ -52,17 +52,17 @@ Create a CSV file (`cdm-owl-mapping.csv`) that documents the relationship betwee
 
 ```
 DOMAIN | CDM_TABLE | CDM_FIELD | CLASS_NAME | ONTOLOGY_PROPERTY | XSD_TYPE | CARDINALITY | CONSTRAINT_TYPE
-Personnel | Employee | EmployeeId | biz:Person | rdf:type | N/A | 1..1 | Key
-Personnel | Employee | FirstName | biz:Person | rdfs:label | xsd:string | 1..1 | Mandatory
-Personnel | Employee | DateOfBirth | biz:Person | biz:hasDateOfBirth | xsd:date | 0..1 | Optional
-Personnel | Employee | EmergencyContact | biz:Person | biz:hasEmergencyContact | xsd:string | 0..1 | Optional
-Assignments | ProjectAssignment | AssignmentId | biz:Assignment | rdf:type | N/A | 1..1 | Key
-Assignments | ProjectAssignment | StartDate | biz:Assignment | biz:startDate | xsd:date | 1..1 | Mandatory
-Assignments | ProjectAssignment | EndDate | biz:Assignment | biz:endDate | xsd:date | 0..1 | Optional
-Clients | ClientProject | ProjectId | biz:ClientProject | rdf:type | N/A | 1..1 | Key
-Clients | ClientProject | ClientId | biz:ClientProject | biz:forClient | biz:Client | 1..1 | Foreign Key
-Finance | BillingEntry | EntryId | biz:Invoice | rdf:type | N/A | 1..1 | Key
-Finance | BillingEntry | Amount | biz:Invoice | biz:hasAmount | xsd:decimal | 1..1 | Mandatory
+Personnel | Employee | EmployeeId | corp:Person | rdf:type | N/A | 1..1 | Key
+Personnel | Employee | FirstName | corp:Person | rdfs:label | xsd:string | 1..1 | Mandatory
+Personnel | Employee | DateOfBirth | corp:Person | corp:hasDateOfBirth | xsd:date | 0..1 | Optional
+Personnel | Employee | EmergencyContact | corp:Person | corp:hasEmergencyContact | xsd:string | 0..1 | Optional
+Assignments | ProjectAssignment | AssignmentId | corp:Assignment | rdf:type | N/A | 1..1 | Key
+Assignments | ProjectAssignment | StartDate | corp:Assignment | corp:startDate | xsd:date | 1..1 | Mandatory
+Assignments | ProjectAssignment | EndDate | corp:Assignment | corp:endDate | xsd:date | 0..1 | Optional
+Clients | ClientProject | ProjectId | corp:ClientProject | rdf:type | N/A | 1..1 | Key
+Clients | ClientProject | ClientId | corp:ClientProject | corp:forClient | corp:Client | 1..1 | Foreign Key
+Finance | BillingEntry | EntryId | corp:Invoice | rdf:type | N/A | 1..1 | Key
+Finance | BillingEntry | Amount | corp:Invoice | corp:hasAmount | xsd:decimal | 1..1 | Mandatory
 ```
 
 This CSV is the **contract** between relational and semantic teams.
@@ -82,7 +82,7 @@ XSD_TO_SQL = {
     'xsd:anyURI':      'VARCHAR(500)',
 }
 
-# Example: onz-g:hasDateOfBirth with range xsd:date → SQL column DATE
+# Example: corp:hasDateOfBirth with range xsd:date → SQL column DATE
 ```
 
 ### Step 3: Generate SQL DDL
@@ -212,8 +212,8 @@ The mapping enables **traceability in both directions**:
 ### Question 1: "Why does CDM table Employee have a DateOfBirth column?"
 
 **Answer** (via mapping):
-- → `onz-g:hasDateOfBirth` property
-- → `onz-g:Human` class
+- → `corp:hasDateOfBirth` property
+- → `corp:Person` class
 - → Required by indicators 1.1, 3.2, 5.0
 - → Regulatory requirement (healthcare law requires birth date tracking)
 
@@ -233,15 +233,15 @@ The mapping enables **traceability in both directions**:
 
 **Step 1**: Update OWL ontology
 ```turtle
-onz-g:hasNationality a owl:DatatypeProperty ;
-    rdfs:domain onz-g:Human ;
+corp:hasNationality a owl:DatatypeProperty ;
+    rdfs:domain corp:Person ;
     rdfs:range xsd:string ;
     owl:minCardinality 1 .
 ```
 
 **Step 2**: Update mapping CSV
 ```
-Personnel | Employee | EmergencyContact | biz:Person | biz:hasEmergencyContact | xsd:string | 1..1 | Mandatory
+Personnel | Employee | EmergencyContact | corp:Person | corp:hasEmergencyContact | xsd:string | 1..1 | Mandatory
 ```
 
 **Step 3**: Regenerate SQL
