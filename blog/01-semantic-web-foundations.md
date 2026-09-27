@@ -21,7 +21,7 @@ onz-zorg:medewerker123 onz-g:hasDateOfBirth "1985-03-15"^^xsd:date .
 ```
 
 This says:
-- **Subject**: `onz-zorg:medewerker123` (a unique identifier using a URI)
+- **Subject**: `biz:employee123` (a unique identifier using a URI)
 - **Predicate**: `rdfs:label` (a property name)
 - **Object**: `"Employee 123"` (a value)
 
@@ -49,11 +49,11 @@ onz-zorg:medewerker123 a onz-g:Human ;
     onz-pers:worksAt onz-org:vestiging456 .
 
 onz-org:vestiging456 a onz-org:Vestiging ;
-    rdfs:label "Amsterdam Care Center" ;
-    onz-g:hasAddress "Herengracht 100, Amsterdam" .
+    rdfs:label "Regional Medical Center" ;
+    onz-g:hasAddress "42 Healthcare Avenue, Central Region" .
 ```
 
-Now the **graph shows relationships**: Employee 123 works at Vestiging 456. These are not separate tables—they're linked by shared URIs.
+Now the **graph shows relationships**: Employee 123 works at Office Location 456. These are not separate tables—they're linked by shared URIs.
 
 ---
 
@@ -144,7 +144,7 @@ SELECT ?employee ?workplace
 WHERE {
     ?employee a onz-g:Human ;
               onz-pers:worksAt ?workplace .
-    ?workplace a onz-org:Vestiging .
+    ?workplace a biz:OfficeLocation .
 }
 ```
 
@@ -159,7 +159,7 @@ This finds: "Which employees work at which care centers?"
 - Hospital B calls it "Staff Number"
 - They're the same thing, but systems can't talk about it
 
-**Semantic Web Solution**: Use shared URIs. Both hospitals reference `http://purl.org/ozo/onz-zorg#medewerker123`.
+**Semantic Web Solution**: Use shared URIs. Both systems reference `http://business.example.org/ontology#employee123`.
 
 ### Problem 2: Regulatory Requirements
 Healthcare has strict rules:

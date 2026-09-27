@@ -14,17 +14,17 @@ This post explains how to map a **Common Data Model (CDM)** in SQL to an **OWL o
 
 ### Scenario
 
-You have:
-- **Relational CDM**: 13 SQL tables (Medewerker, Werkovereenkomst, VerpleegProcess, etc.)
-- **OWL Ontology**: 25 OWL classes describing healthcare concepts
-- **Business requirement**: Keep them in sync
+You have a **multi-office consulting firm** with:
+- **Relational CDM**: 13 SQL tables (Employee, ProjectAssignment, ClientProject, BillingEntry, etc.)
+- **OWL Ontology**: 25 OWL classes describing business concepts (Person, Assignment, Client, Invoice, etc.)
+- **Business requirement**: Keep them in sync across all offices and clients
 
 **What happens**:
-1. Business changes requirement: "Employees must have nationality"
-2. Ontology team updates OWL: Add `hasNationality` property to `Human` class
-3. Data team manually updates SQL: `ALTER TABLE Medewerker ADD Nationaliteit VARCHAR(50)`
-4. Validation team manually updates rules: "Nationaliteit must match citizenship enum"
-5. BI team manually updates reports: Add nationality field to dashboards
+1. Business changes requirement: "Employees must have emergency contact info"
+2. Ontology team updates OWL: Add `hasEmergencyContact` property to `Person` class
+3. Data team manually updates SQL: `ALTER TABLE Employee ADD EmergencyContact VARCHAR(50)`
+4. Validation team manually updates rules: "EmergencyContact must be a valid phone number"
+5. BI team manually updates reports: Add emergency contact field to HR dashboards
 
 **Result**: 4 manual steps, high error rate, OWL and SQL gradually drift apart.
 
@@ -52,17 +52,17 @@ Create a CSV file (`cdm-owl-mapping.csv`) that documents the relationship betwee
 
 ```
 DOMAIN | CDM_TABLE | CDM_FIELD | CLASS_NAME | ONTOLOGY_PROPERTY | XSD_TYPE | CARDINALITY | CONSTRAINT_TYPE
-Personnel | Medewerker | MedewerkerId | onz-g:Human | rdf:type | N/A | 1..1 | Key
-Personnel | Medewerker | Voornaam | onz-g:Human | rdfs:label | xsd:string | 1..1 | Mandatory
-Personnel | Medewerker | Geboortedatum | onz-g:Human | onz-g:hasDateOfBirth | xsd:date | 0..1 | Optional
-Personnel | Medewerker | Nationaliteit | onz-g:Human | onz-g:hasNationality | xsd:string | 0..1 | Optional
-Personnel | Werkovereenkomst | WerkovereenkomstId | onz-pers:EmploymentContract | rdf:type | N/A | 1..1 | Key
-Personnel | Werkovereenkomst | StartDatum | onz-pers:EmploymentContract | onz-g:startDate | xsd:date | 1..1 | Mandatory
-Personnel | Werkovereenkomst | EindDatum | onz-pers:EmploymentContract | onz-g:endDate | xsd:date | 0..1 | Optional
-Care | VerpleegProcess | ProcessId | onz-zorg:CareProcess | rdf:type | N/A | 1..1 | Key
-Care | VerpleegProcess | ClientId | onz-zorg:CareProcess | onz-zorg:forClient | onz-zorg:Client | 1..1 | Foreign Key
-Finance | Boeking | BoekingId | onz-fin:Posting | rdf:type | N/A | 1..1 | Key
-Finance | Boeking | Bedrag | onz-fin:Posting | onz-fin:hasAmount | xsd:decimal | 1..1 | Mandatory
+Personnel | Employee | EmployeeId | biz:Person | rdf:type | N/A | 1..1 | Key
+Personnel | Employee | FirstName | biz:Person | rdfs:label | xsd:string | 1..1 | Mandatory
+Personnel | Employee | DateOfBirth | biz:Person | biz:hasDateOfBirth | xsd:date | 0..1 | Optional
+Personnel | Employee | EmergencyContact | biz:Person | biz:hasEmergencyContact | xsd:string | 0..1 | Optional
+Assignments | ProjectAssignment | AssignmentId | biz:Assignment | rdf:type | N/A | 1..1 | Key
+Assignments | ProjectAssignment | StartDate | biz:Assignment | biz:startDate | xsd:date | 1..1 | Mandatory
+Assignments | ProjectAssignment | EndDate | biz:Assignment | biz:endDate | xsd:date | 0..1 | Optional
+Clients | ClientProject | ProjectId | biz:ClientProject | rdf:type | N/A | 1..1 | Key
+Clients | ClientProject | ClientId | biz:ClientProject | biz:forClient | biz:Client | 1..1 | Foreign Key
+Finance | BillingEntry | EntryId | biz:Invoice | rdf:type | N/A | 1..1 | Key
+Finance | BillingEntry | Amount | biz:Invoice | biz:hasAmount | xsd:decimal | 1..1 | Mandatory
 ```
 
 This CSV is the **contract** between relational and semantic teams.
@@ -135,19 +135,19 @@ generate_ddl_from_mapping('cdm-owl-mapping.csv', 'generated_ddl.sql')
 
 **Output**: `generated_ddl.sql`
 ```sql
-CREATE TABLE dbo.Medewerker (
-    MedewerkerId INT NOT NULL,
-    Voornaam VARCHAR(255) NOT NULL,
-    Geboortedatum DATE NULL,
-    Nationaliteit VARCHAR(255) NULL,
-    PRIMARY KEY (MedewerkerId)
+CREATE TABLE dbo.Employee (
+    EmployeeId INT NOT NULL,
+    FirstName VARCHAR(255) NOT NULL,
+    DateOfBirth DATE NULL,
+    EmergencyContact VARCHAR(255) NULL,
+    PRIMARY KEY (EmployeeId)
 );
 
-CREATE TABLE dbo.Werkovereenkomst (
-    WerkovereenkomstId INT NOT NULL,
-    StartDatum DATE NOT NULL,
-    EindDatum DATE NULL,
-    PRIMARY KEY (WerkovereenkomstId)
+CREATE TABLE dbo.ProjectAssignment (
+    AssignmentId INT NOT NULL,
+    StartDate DATE NOT NULL,
+    EndDate DATE NULL,
+    PRIMARY KEY (AssignmentId)
 );
 ```
 
@@ -157,8 +157,8 @@ CREATE TABLE dbo.Werkovereenkomst (
 
 Healthcare systems often run multiple ontology versions:
 
-- **ZK Profile** (Zorgkantoor): 24 indicators covering HR + care + finance
-- **IGJ Profile** (IGJ regulatory): 4 indicators covering care + workforce + planning
+- **CareFund Profile** (healthcare fund management): 24 indicators covering HR + care + finance
+- **HealthAudit Profile** (regulatory compliance): 4 indicators covering care + workforce + planning
 
 **Question**: Which CDM tables are required for which profile?
 
@@ -209,7 +209,7 @@ This tells you:
 
 The mapping enables **traceability in both directions**:
 
-### Question 1: "Why does CDM table Medewerker have a Geboortedatum column?"
+### Question 1: "Why does CDM table Employee have a DateOfBirth column?"
 
 **Answer** (via mapping):
 - → `onz-g:hasDateOfBirth` property
@@ -241,7 +241,7 @@ onz-g:hasNationality a owl:DatatypeProperty ;
 
 **Step 2**: Update mapping CSV
 ```
-Personnel | Medewerker | Nationaliteit | onz-g:Human | onz-g:hasNationality | xsd:string | 1..1 | Mandatory
+Personnel | Employee | EmergencyContact | biz:Person | biz:hasEmergencyContact | xsd:string | 1..1 | Mandatory
 ```
 
 **Step 3**: Regenerate SQL
@@ -251,11 +251,11 @@ python cdm_generate.py --mapping cdm-owl-mapping.csv --output generated_ddl.sql
 
 **Step 4**: New SQL reflects the change
 ```sql
-ALTER TABLE dbo.Medewerker ADD Nationaliteit VARCHAR(255) NOT NULL;
+ALTER TABLE dbo.Employee ADD EmergencyContact VARCHAR(255) NOT NULL;
 ```
 
 **Step 5**: Validation rules auto-update
-- "Medewerker.Nationaliteit is mandatory" ← derived from OWL minCardinality
+- "Employee.EmergencyContact is mandatory" ← derived from OWL minCardinality
 
 **Result**: One change in OWL → cascades through SQL, validation, BI dashboards automatically.
 
@@ -268,7 +268,7 @@ ALTER TABLE dbo.Medewerker ADD Nationaliteit VARCHAR(255) NOT NULL;
 | **Single source of truth** | OWL ontology is canonical; SQL is derived |
 | **Automatic schema evolution** | No manual SQL DDL edits |
 | **Regulatory compliance** | Audit trail shows which requirements drive which columns |
-| **Multi-profile support** | Same CDM can serve ZK, IGJ, and custom profiles |
+| **Multi-profile support** | Same CDM can serve CareFund, HealthAudit, and custom profiles |
 | **Version compatibility matrix** | Know which tables work with which ontology versions |
 | **Breaking change detection** | Upgrade automated but breaking changes flagged |
 

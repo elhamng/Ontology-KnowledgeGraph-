@@ -15,7 +15,7 @@ Without visibility, data quality issues slip through to downstream systems. This
 Your data warehouse processes 10,000 employee records monthly:
 
 ```csv
-MedewerkerId,Voornaam,Geboortedatum,StartDatum,EndDatum
+EmployeeId,FirstName,DateOfBirth,StartDate,EndDate
 123,John,1985-03-15,2020-01-01,2023-06-30
 124,Jane,,2020-01-15,  # Missing birth date!
 125,Bob,1990-12-25,2023-01-01,2022-12-31  # End < Start!
@@ -35,7 +35,7 @@ MedewerkerId,Voornaam,Geboortedatum,StartDatum,EndDatum
 ## Solution: Two-Stage Validation + Streamlit Dashboard
 
 ```
-CSV Data (Medewerker.csv, Werkovereenkomst.csv, ...)
+CSV Data (Employee.csv, ProjectAssignment.csv, ...)
     ↓
 Stage 1: CSV Validation (fast, schema-level)
   ✓ Mandatory fields present?
@@ -72,7 +72,7 @@ def validate_csv(csv_file, mapping_file):
     results = []
     
     # For this table, get all constraints
-    table_constraints = mapping[mapping['CDM_TABLE'] == 'Medewerker']
+    table_constraints = mapping[mapping['CDM_TABLE'] == 'Employee']
     
     for _, constraint in table_constraints.iterrows():
         col_name = constraint['CDM_FIELD']
@@ -121,15 +121,15 @@ def validate_csv(csv_file, mapping_file):
     return pd.DataFrame(results)
 
 # Usage
-validation_results = validate_csv('data/Medewerker.csv', 'cdm-owl-mapping.csv')
+validation_results = validate_csv('data/Employee.csv', 'cdm-owl-mapping.csv')
 ```
 
 **Output Example**:
 ```
 rule_number | check_kind | cdm_table | cdm_field | total | pass | fail | fail_pct | ontology_rule
-R1          | mandatory  | Medewerker | Voornaam | 10000 | 10000 | 0    | 0.0  | minCardinality 1
-R2          | mandatory  | Medewerker | Geboortedatum | 10000 | 9950 | 50   | 0.5  | minCardinality 1
-R3          | datatype   | Medewerker | Geboortedatum | 10000 | 9998 | 2    | 0.02 | range xsd:date
+R1          | mandatory  | Employee | FirstName | 10000 | 10000 | 0    | 0.0  | minCardinality 1
+R2          | mandatory  | Employee | DateOfBirth | 10000 | 9950 | 50   | 0.5  | minCardinality 1
+R3          | datatype   | Employee | DateOfBirth | 10000 | 9998 | 2    | 0.02 | range xsd:date
 ```
 
 ---
@@ -162,8 +162,8 @@ def csv_to_rdf(csv_file, mapping_file, output_ttl):
     # For each row
     for idx, row in df.iterrows():
         # Create individual URI
-        person_id = row['MedewerkerId']
-        uri = URIRef(f"{ONZ_ZORG}medewerker{person_id}")
+        person_id = row['EmployeeId']
+        uri = URIRef(f"{BIZ}employee{person_id}")
         
         # Add type
         g.add((uri, RDF.type, ONZ_G.Human))
@@ -180,21 +180,20 @@ def csv_to_rdf(csv_file, mapping_file, output_ttl):
     g.serialize(destination=output_ttl, format='turtle')
 
 # Usage
-csv_to_rdf('data/Medewerker.csv', 'cdm-owl-mapping.csv', 'output/medewerker.ttl')
+csv_to_rdf('data/Employee.csv', 'cdm-owl-mapping.csv', 'output/employee.ttl')
 ```
 
-**Output Example** (`medewerker.ttl`):
+**Output Example** (`employee.ttl`):
 ```turtle
-@prefix onz-g: <http://purl.org/ozo/onz-g#> .
-@prefix onz-zorg: <http://purl.org/ozo/onz-zorg#> .
+@prefix biz: <http://business.example.org/ontology#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-onz-zorg:medewerker123 a onz-g:Human ;
+biz:employee123 a biz:Person ;
     rdfs:label "John" ;
-    onz-g:hasDateOfBirth "1985-03-15"^^xsd:date .
+    biz:hasDateOfBirth "1985-03-15"^^xsd:date .
 
-onz-zorg:medewerker124 a onz-g:Human ;
+biz:employee124 a biz:Person ;
     rdfs:label "Jane" .
     # Note: no birth date (null)
 ```
@@ -319,7 +318,7 @@ fig = px.pie(names=contract_types.index, values=contract_types.values)
 st.plotly_chart(fig, use_container_width=True)
 
 # FTE per care center bar chart
-fte_per_location = df.groupby('Vestiging')['FTE'].sum().sort_values()
+fte_per_location = df.groupby('OfficeLocation')['FTE'].sum().sort_values()
 fig = px.bar(
     x=fte_per_location.values, y=fte_per_location.index, orientation='h'
 )

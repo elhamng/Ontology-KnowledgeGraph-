@@ -28,7 +28,7 @@ What is the average number of healthcare workers per care center?
 ## Concepts
 - [Employee](http://purl.org/ozo/onz-g#Human)
 - [Works at](http://purl.org/ozo/onz-g#worksAt)
-- [Care Center](http://purl.org/ozo/onz-org#Vestiging)
+- [Office Location](http://business.example.org/ontology#OfficeLocation)
 
 ## Properties
 - [Birth date](http://purl.org/ozo/onz-g#hasDateOfBirth)
@@ -108,9 +108,9 @@ concepts = extract_concepts_from_markdown(indicator_file)
 
 **Output**: `used_classes.txt`
 ```
-indicator_1.1 → Human, worksAt, Vestiging
-indicator_1.2 → EmploymentContract, startDate, endDate
-indicator_18.1 → FinancialAccount, hasBalance, Vestiging
+indicator_1.1 → Person, worksAt, OfficeLocation
+indicator_1.2 → Assignment, startDate, endDate
+indicator_18.1 → Invoice, hasAmount, Client
 ...
 ```
 
@@ -171,7 +171,7 @@ constraints = extract_owl_constraints('ontology.ttl', 'Human')
 ```
 CLASS_NAME | PROPERTY | RANGE | MIN_CARDINALITY | MAX_CARDINALITY | RULE_TYPE
 Human | hasDateOfBirth | xsd:date | 1 | 1 | Mandatory
-Vestiging | hasAddress | xsd:string | 1 | null | Mandatory
+OfficeLocation | hasAddress | xsd:string | 1 | null | Mandatory
 EmploymentContract | startDate | xsd:date | 1 | 1 | Mandatory
 EmploymentContract | endDate | xsd:date | 0 | 1 | Optional
 ```
@@ -249,7 +249,7 @@ build_indicator_export('indicators_used_classes.csv', 'constraints.csv')
 | Indicator | Class | Property | Data Type | Required? | Business Rule |
 |-----------|-------|----------|-----------|-----------|---|
 | 1.1 | Human | hasDateOfBirth | date | Yes | Must be xsd:date |
-| 1.1 | Vestiging | hasAddress | string | Yes | Must be xsd:string |
+| 1.1 | OfficeLocation | hasAddress | string | Yes | Must be xsd:string |
 | 1.2 | EmploymentContract | startDate | date | Yes | Must be xsd:date |
 | 1.2 | EmploymentContract | endDate | date | No | Optional xsd:date |
 ```
@@ -265,7 +265,7 @@ No more manual sync between ontology, documentation, and validation rules.
 
 ### Benefit 2: Version Control
 Each indicator version is tracked:
-- v1.0: Indicator 1.1 uses [Human, Vestiging]
+- v1.0: Indicator 1.1 uses [Person, OfficeLocation]
 - v1.1: Indicator 1.1 adds [Employment Contract]
 - v2.0: Indicator 1.1 changes to [Human, CareCenter] (ontology refactoring)
 

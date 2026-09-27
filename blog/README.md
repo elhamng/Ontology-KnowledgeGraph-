@@ -36,7 +36,7 @@ This blog series explains how to build **semantic data systems** for healthcare 
 **Length**: ~2,600 words | **Level**: Intermediate  
 **What you'll learn**: Map SQL tables to OWL classes, automatically generate DDL from ontology, handle multiple versions
 
-**Key example**: Medewerker table + `hasDateOfBirth` property → `Geboortedatum NOT NULL` SQL constraint
+**Key example**: Employee table + `hasDateOfBirth` property → `DateOfBirth NOT NULL` SQL constraint
 
 **When to read**: You need to keep SQL schemas aligned with evolving ontologies
 
@@ -91,7 +91,7 @@ Read **05 (Lessons Learned)** for realistic timelines and ROI expectations.
 All posts use consistent healthcare domain examples:
 
 **Domain Concepts**:
-- **Entities**: Employee (`Medewerker`), Employment Contract (`Werkovereenkomst`), Care Center (`Vestiging`), Care Process (`VerpleegProcess`)
+- **Entities**: Employee, ProjectAssignment, OfficeLocation, ClientProject, BillingEntry
 - **Properties**: Birth date (`hasDateOfBirth`), start date (`startDate`), end date (`endDate`), address (`hasAddress`)
 - **Data types**: `xsd:date`, `xsd:string`, `xsd:decimal`
 - **Namespaces**: `onz-g` (general), `onz-pers` (personnel), `onz-zorg` (care), `onz-fin` (finance)

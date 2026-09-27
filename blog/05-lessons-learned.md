@@ -66,7 +66,7 @@ Keep a "translation table" in your documentation:
 |---|---|---|
 | "Employee must have birth date" | Geboortedatum NOT NULL | Human minCardinality 1 hasDateOfBirth |
 | "Birth date must be in the past" | CHECK(Geboortedatum < GETDATE()) | hasDateOfBirth rdfs:range xsd:date with temporal constraint |
-| "Employee can work multiple contracts" | Medewerker 1:N Werkovereenkomst | Employee 0..* worksAt EmploymentContract |
+| "Employee can have multiple assignments" | Employee 1:N ProjectAssignment | Employee 0..* hasAssignment Assignment |
 
 ---
 
@@ -76,7 +76,7 @@ Keep a "translation table" in your documentation:
 
 You think "I'll just parse dates from CSV." Then:
 
-- **AFAS system exports**: `15/03/1985` (European DD/MM/YYYY)
+- **HRDataFlow system exports**: `15/03/1985` (European DD/MM/YYYY)
 - **Excel dumps**: `1985-03-15` (ISO format)
 - **Old export files**: `1985/03/15` (ISO with slashes)
 - **Timestamps included**: `1985-03-15 14:30:00` (with time)
@@ -101,7 +101,7 @@ def parse_date_robust(val):
     
     formats = [
         '%Y-%m-%d',              # ISO (most common in clean data)
-        '%d/%m/%Y',              # European (AFAS export)
+        '%d/%m/%Y',              # European (HRDataFlow export)
         '%d-%m-%Y',              # European with dashes
         '%Y/%m/%d',              # ISO with slashes
         '%d/%m/%Y %H:%M:%S',     # European with timestamp
@@ -168,8 +168,8 @@ def check_foreign_key_integrity(table_with_fk, fk_column,
 
 # Usage
 check_foreign_key_integrity(
-    df_contracts, 'MedewerkerId',
-    df_employees, 'MedewerkerId'
+    df_assignments, 'EmployeeId',
+    df_employees, 'EmployeeId'
 )
 ```
 
@@ -207,8 +207,8 @@ VALIDATION_RULES = {
     'v1.0': {
         'enforcement': 'strict',
         'rules': [
-            {'check': 'mandatory_fields', 'tables': ['Medewerker', 'Werkovereenkomst']},
-            {'check': 'datatype_match', 'tables': ['Medewerker', 'Werkovereenkomst']},
+            {'check': 'mandatory_fields', 'tables': ['Employee', 'ProjectAssignment']},
+            {'check': 'datatype_match', 'tables': ['Employee', 'ProjectAssignment']},
         ]
     },
     'v1.1': {
@@ -216,7 +216,7 @@ VALIDATION_RULES = {
         'rules': [
             # All of v1.0
             # PLUS: date sequence validation
-            {'check': 'date_sequences', 'tables': ['Werkovereenkomst']},
+            {'check': 'date_sequences', 'tables': ['ProjectAssignment']},
         ]
     },
     'v2.0_staging': {
@@ -257,7 +257,7 @@ def get_validation_ruleset(environment='production'):
 Example errors caught by CSV validation:
   - 500 records missing birth date (mandatory field)
   - 47 records with invalid email format
-  - 23 Werkovereenkomst records with non-existent MedewerkerId
+  - 23 ProjectAssignment records with non-existent EmployeeId
   → Total: 570 errors
 
 Example errors caught by RDF/SPARQL validation:

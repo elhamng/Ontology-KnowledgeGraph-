@@ -11,7 +11,7 @@ LAYER 1: Semantic Definition (OWL Ontology)
         ↓ cdm_generate.py
 
 LAYER 2: Relational Schema (SQL CDM)
-├─ 13 SQL tables (Medewerker, Werkovereenkomst, VerpleegProcess, etc.)
+├─ 13 SQL tables (Employee, ProjectAssignment, ClientProject, BillingEntry, etc.)
 ├─ Columns derived from OWL properties via cdm-owl-mapping.csv
 └─ Automatically regenerated when OWL changes
 
@@ -56,7 +56,7 @@ onz-g:hasNationality a owl:DatatypeProperty ;
 
 ### Step 2: Update Mapping CSV
 ```
-Personnel | Medewerker | Nationaliteit | onz-g:Human | onz-g:hasNationality | xsd:string | 1..1 | Mandatory
+Personnel | Employee | EmergencyContact | biz:Person | biz:hasEmergencyContact | xsd:string | 1..1 | Mandatory
 ```
 
 ### Step 3: Run Pipeline
@@ -85,7 +85,7 @@ Check Type | Description | Example
 -----------|-------------|----------
 mandatory | Required field present? | Voornaam NOT NULL → 50 missing
 datatype | Type correct? | Geboortedatum as xsd:date → 2 format errors
-fk_integrity | Foreign key exists? | MedewerkerId in Werkovereenkomst exists in Medewerker → 0 orphans
+fk_integrity | Foreign key exists? | EmployeeId in ProjectAssignment exists in Employee → 0 orphans
 ```
 
 ### RDF Validation (Stage 2) - Slower (~30 sec for 10k records)
@@ -120,7 +120,7 @@ Dashboard Tab: "Data Validation"
 Dashboard Tab: "Workforce & Care"
 ├─ KPIs: Active contracts | Total FTE | Active clients | Sick leave (90d)
 ├─ Charts: Contract type mix | FTE per care center | Sick leave trend
-└─ Action: "Vestiging Amsterdam is understaffed. Need 2 more FTE."
+└─ Action: "Regional center is understaffed. Need 2 more FTE."
 ```
 
 ### For Finance (Business)
@@ -136,11 +136,11 @@ Dashboard Tab: "Financial Summary"
 ## Common Patterns & Solutions
 
 ### Pattern 1: Multi-Source Same Data
-**Problem**: Employee data comes from both AFAS (HR system) and care system
+**Problem**: Employee data comes from both HRDataFlow (HR system) and care system
 
 **Solution**: Create separate OWL individuals, link with `owl:sameAs`
 ```turtle
-afas:employee123 owl:sameAs care:person456 .
+hrflow:employee123 owl:sameAs care:person456 .
 ```
 
 ### Pattern 2: Temporal Data
@@ -158,7 +158,7 @@ FILTER (?start <= ?targetDate && (?end > ?targetDate || !BOUND(?end)))
 
 **Solution**: Build graph with explicit relationships
 ```turtle
-vestiging123 onz-org:partOf region_north .
+office123 biz:partOf region_north .
 region_north onz-org:partOf country_nl .
 ```
 
