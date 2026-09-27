@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # My Learning Journey & Knowledge Repository
 
 > A personal documentation of my study, learning, and the books that shaped my understanding.
@@ -670,4 +669,3 @@ My learning has been shaped by:
 
 **Last Updated**: September 25, 2026  
 **Status**: Active learning (updated monthly)
->>>>>>> b12eb5ece053d40dd2f5ea653eaab2ff898a2175
