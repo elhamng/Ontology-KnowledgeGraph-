@@ -516,6 +516,367 @@ Here's what the actual book says about these concepts. I've simplified it above,
 
 ---
 
+---
+
+# Chapter 3: RDF - How to Actually Write Semantic Data
+
+**Date Started**: 2026-09-30  
+**Topic**: The RDF standard, triples, serialization formats, URIs
+
+---
+
+## 📌 Chapter 3 Key Concept
+
+**RDF** is the standard way to write down semantic data on the Web. Everything in RDF is built on three simple ideas:
+1. Use global unique names (URIs) for things
+2. Express relationships as **triples** (subject → predicate → object)
+3. Store these triples in different formats depending on what you're doing
+
+---
+
+## 🔍 Detailed Notes - Chapter 3 (SIMPLIFIED)
+
+### **1. What's a Resource?**
+
+In the Semantic Web, we call things **"resources"**. A resource is anything people might want to talk about:
+- A person (Alice)
+- A place (Hospital)
+- A concept (Nursing)
+- An event (A shift)
+- Even an abstract idea
+
+Resources are identified by **URIs** (Uniform Resource Identifiers):
+```
+http://hospital.example.org/employee/alice
+http://hospital.example.org/department/ICU
+http://healthcare-terminology.org/Nursing
+```
+
+---
+
+### **2. The Triple: Subject, Predicate, Object**
+
+Data in RDF is organized as **triples**. Think of it like a sentence:
+
+```
+Alice (Subject) works_in (Predicate) ICU (Object)
+Alice (Subject) has_salary (Predicate) 65000 (Object)
+Alice (Subject) has_certification (Predicate) CriticalCareNursing (Object)
+```
+
+**Why three parts?**
+- **Subject**: WHO we're talking about
+- **Predicate**: WHAT property we're describing
+- **Object**: WHAT the value is
+
+This is how you express ANY fact in RDF.
+
+---
+
+### **3. Serialization: Different Ways to Write Triples**
+
+A triple is just an abstract concept. When you actually WRITE it down in a file, you need a format. There are several:
+
+#### **Format 1: N-Triples (Simplest)**
+
+Each triple on one line. Uses full URIs (no shortcuts):
+```
+<http://hospital.example.org/employee/alice> <http://hospital.example.org/hasName> "Alice Johnson" .
+<http://hospital.example.org/employee/alice> <http://hospital.example.org/worksIn> <http://hospital.example.org/department/ICU> .
+```
+
+**Pros**: Easy to parse, simple  
+**Cons**: Very long, hard to read
+
+---
+
+#### **Format 2: Turtle (Recommended for Humans)**
+
+Uses shortcuts (prefixes) to make it readable:
+```
+@prefix emp: <http://hospital.example.org/employee/>
+@prefix dept: <http://hospital.example.org/department/>
+@prefix hosp: <http://hospital.example.org/>
+
+emp:alice hosp:hasName "Alice Johnson" ;
+          hosp:worksIn dept:ICU ;
+          hosp:hasSalary 65000 .
+```
+
+**Pros**: Human-readable, compact  
+**Cons**: Requires understanding prefixes
+
+---
+
+#### **Format 3: RDF/XML (For Systems)**
+
+Uses XML format (older, but still used by some systems):
+```xml
+<rdf:RDF xmlns:emp="http://hospital.example.org/employee/"
+         xmlns:hosp="http://hospital.example.org/">
+  <rdf:Description rdf:about="http://hospital.example.org/employee/alice">
+    <hosp:hasName>Alice Johnson</hosp:hasName>
+    <hosp:worksIn rdf:resource="http://hospital.example.org/department/ICU"/>
+  </rdf:Description>
+</rdf:RDF>
+```
+
+**Pros**: Works with XML tools  
+**Cons**: Verbose, hard to read
+
+---
+
+#### **Format 4: JSON-LD (For Web Applications)**
+
+Uses JSON format (modern web developers love this):
+```json
+{
+  "@context": {
+    "@vocab": "http://hospital.example.org/",
+    "emp": "http://hospital.example.org/employee/"
+  },
+  "@id": "emp:alice",
+  "hasName": "Alice Johnson",
+  "worksIn": { "@id": "http://hospital.example.org/department/ICU" },
+  "hasSalary": 65000
+}
+```
+
+**Pros**: Works with JavaScript, modern web stack  
+**Cons**: Requires understanding @ symbols
+
+---
+
+**Key Insight**: All four formats describe the SAME triples. Pick the format that matches your tools.
+
+---
+
+### **4. URIs and Namespaces**
+
+A **URI** is a global identifier that works anywhere on the Web.
+
+```
+http://hospital.example.org/employee/alice
+│        │                   │         │
+domain   │                   │         resource name
+         namespace/context   type
+```
+
+**Why URIs?**
+- Different systems can refer to the SAME alice using the SAME URI
+- No ambiguity
+- Globally unique
+
+**Namespaces** group related URIs:
+```
+http://hospital.example.org/employee/    ← namespace
+  alice                                   ← resource name
+  bob
+  charlie
+```
+
+In Turtle, we use **prefixes** as shortcuts:
+```
+@prefix emp: <http://hospital.example.org/employee/>
+
+emp:alice    ← means http://hospital.example.org/employee/alice
+emp:bob      ← means http://hospital.example.org/employee/bob
+```
+
+---
+
+### **5. Named Graphs: Organizing Collections of Triples**
+
+Sometimes you have a LOT of triples and want to give them a name. A **named graph** is a collection of triples with its own identity.
+
+**Real example:**
+```
+Graph: https://www.wikipedia.org/
+
+emp:shakespeare a Person ;
+                hasChild emp:susanna, emp:judith, emp:hamnet .
+
+emp:shakespeare hasWritten lit:Hamlet ;
+                hasWritten lit:Macbeth .
+```
+
+**Why name graphs?**
+- **Track data source**: This graph came from Wikipedia, that graph from IMDB
+- **Reification**: Make statements about statements ("Wikipedia says Shakespeare wrote Hamlet")
+- **Context**: Keep related triples together
+
+---
+
+### **6. Blank Nodes: Unnamed Resources**
+
+Sometimes you have a thing but don't know its identity. Example:
+
+"Shakespeare had a mistress, but we don't know who she was. We just know she lived in England."
+
+In RDF:
+```
+[ a Person ;
+  livedIn England ]
+lit:Sonnet78 hasInspiration [ a Person ; livedIn England ] .
+```
+
+The `[ ... ]` means "some unnamed resource with these properties."
+
+**When to use blank nodes:**
+- When you don't have a URI for something
+- When something is truly anonymous
+- When you're embedding anonymous objects
+
+**Note**: The book recommends avoiding blank nodes except in special cases (like OWL definitions).
+
+---
+
+### **7. Lists in RDF**
+
+If you want to express an ordered list:
+```
+lit:Shakespeare hasChild (emp:Susanna emp:Judith emp:Hamnet) .
+```
+
+This creates a special list structure behind the scenes. Most of the time, you don't care about order in RDF—order is usually just a database concern.
+
+---
+
+## 💡 Real-World Example (Your Work)
+
+**Scenario**: You're converting your KIK-V healthcare database to RDF.
+
+**Original CSV data**:
+```
+EmployeeId, FirstName, DateOfBirth, Department
+123, Alice, 1985-03-15, ICU
+124, Bob, 1988-06-20, Cardiology
+```
+
+**In Turtle (recommended format)**:
+```
+@prefix emp: <http://corporate.example.org/employee/>
+@prefix corp: <http://corporate.example.org/>
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+
+emp:123 a corp:Employee ;
+        corp:firstName "Alice" ;
+        corp:dateOfBirth "1985-03-15"^^xsd:date ;
+        corp:worksIn emp:department-ICU .
+
+emp:124 a corp:Employee ;
+        corp:firstName "Bob" ;
+        corp:dateOfBirth "1988-06-20"^^xsd:date ;
+        corp:worksIn emp:department-Cardiology .
+```
+
+**Why Turtle?** Because:
+- Humans can read it
+- Tools can parse it easily
+- It's compact
+- It's becoming the standard for RDF data
+
+---
+
+## 🤔 Questions to Think About
+
+1. **Which format should I use?**
+   - Humans reading: **Turtle**
+   - Web apps: **JSON-LD**
+   - Legacy XML systems: **RDF/XML**
+   - Parsing/loading data: **N-Triples** or **N-Quads**
+
+2. **What if I don't know the full URI?**
+   - Use a **blank node** (but avoid if possible)
+   - Or create a temporary URI: `http://temp.example.org/unknown-person-123`
+
+3. **Can I convert between formats?**
+   - Yes! All formats represent the same triples
+   - Tools exist to convert between them (rdflib in Python does this)
+
+---
+
+## 📚 Standard Namespaces (The Common Ones)
+
+| Prefix | URI | Purpose |
+|--------|-----|---------|
+| `rdf:` | `http://www.w3.org/1999/02/22-rdf-syntax-ns#` | RDF core concepts (type, Property) |
+| `rdfs:` | `http://www.w3.org/2000/01/rdf-schema#` | RDF Schema (Class, subClassOf) |
+| `owl:` | `http://www.w3.org/2002/07/owl#` | OWL (Ontology Web Language) |
+| `xsd:` | `http://www.w3.org/2001/XMLSchema#` | Data types (date, string, integer) |
+| `skos:` | `http://www.w3.org/2004/02/skos/core#` | Vocabularies and taxonomies |
+
+---
+
+## 🎯 Practical Coding Next Steps
+
+1. ✅ **Understand**: Triples are subject-predicate-object
+2. ✅ **Understand**: URIs are global identifiers
+3. **Next**: Write some Turtle files for your own data
+4. **Then**: Learn how to query RDF with SPARQL
+5. **Goal**: Convert your healthcare CSV to Turtle format
+
+---
+
+## 📖 Original Book Text (Direct Quotes)
+
+### **On Resources and Triples**
+
+> "In the Semantic Web we refer to the things in the world as resources; a resource can be anything that someone might want to talk about.
+>
+> Data are most typically represented in tabular form, in which each row represents some item we are describing, and each column represents some property of those items. The cells in the table are the particular values for those properties.
+>
+> Since a cell is represented with three values, the basic building block for RDF is called the **triple**. The identifier for the row is called the **subject** of the triple (following the notion from elementary grammar, since the subject is the thing that a statement is about). The identifier for the column is called the **predicate** of the triple (since columns specify properties of the entities in the rows). The value in the cell is called the **object** of the triple."
+
+---
+
+### **On URIs and Namespaces**
+
+> "The essence of the merge process comes down to answering the question 'When is a node in one graph the same node as a node in another graph?' In RDF, this issue is resolved through the use of Uniform Resource Identifiers (URIs).
+>
+> URIs and URLs look exactly the same, and, in fact, a URL is just a special case of the URI. The URI is an identifier with global (i.e., 'World Wide' in the 'World Wide Web' sense) scope."
+
+---
+
+### **On Named Graphs**
+
+> "Why would we want to name a graph? There are a few basic use cases:
+>
+> • **One file, one graph.** When we load this data into an RDF data store, we might want to keep data from different sources separate. A convenient way to do this is to put all the data from one source into a single named graph. The name of the graph (as a URI) can even give information as to where we can find that source.
+>
+> • **Reification.** Named graphs provide another way to accomplish higher-order relationships, in which we want to make statements about statements.
+>
+> • **Context.** Sometimes when we have a set of triples, we would like to consider them in some context; for example, 'in this movie' represents a context for the assertion 'Kenneth Brannagh played Hamlet.'"
+
+---
+
+### **On Serialization Formats**
+
+> "There are multiple ways of expressing RDF in textual form. It is useful to compare different serializations to different ways to write the same language; in English and other European languages, the same sentence can be printed or written in cursive script. These don't look at all alike, and there are good reasons for why we might use one instead of the other in any particular situation. But we can copy a message from cursive to print without any loss of content. The same is true with the serializations; we can express the same triples in one serialization or the other, depending on taste, expediency, availability of tools, and so on."
+
+---
+
+### **On Blank Nodes**
+
+> "Sometimes we know that something exists, and we even know some things about it, but we don't know its identity. For instance, suppose we want to represent the conjecture that Shakespeare had a mistress, whose identity remains unknown. But we know a few things about her; she was a woman, she lived in England, and she was the inspiration for Sonnet 78.
+>
+> RDF allows for a **blank node**, or bnode for short, for such a situation. The use of the bnode in RDF can essentially be interpreted as a logical statement, 'there exists.' That is, in these statements we assert 'there exists a woman, who lived in England, who was the inspiration for Sonnet78.'"
+
+---
+
+### **Fundamental Concepts from Chapter 3**
+
+> "• **RDF (Resource Description Framework)** — This distributes data on the Web.
+> • **Triple** — The fundamental data structure of RDF. A triple is made up of a subject, predicate, and object.
+> • **Graph** — A nodes-and-links structural view of RDF data.
+> • **URI (Uniform Resource Identifier)** — A generalization of the URL (Uniform Resource Locator), which is the global name on the Web.
+> • **Namespace** — A set of names that belongs to a single authority. Namespaces allow different agents to use the same word in different ways.
+> • **CURIE** — An abbreviated version of a URI, it is made up of a namespace identifier and a name, separated by a colon.
+> • **rdf:type** — The relationship between an instance and its type.
+> • **Blank nodes** — RDF nodes that have no URI and thus cannot be referenced globally. They are used to stand in for anonymous entities."
+
+---
+
 **Date Last Updated**: 2026-09-30  
-**Chapter**: 2 (How Models Work)  
-**Confidence Level**: ⭐⭐⭐⭐⭐ (5/5 - simplified version is much clearer!)
+**Chapter**: 1-3 (Foundations + Models + RDF Syntax)  
+**Confidence Level**: ⭐⭐⭐⭐⭐ (5/5 - solid foundation established)
