@@ -467,6 +467,55 @@ The Semantic Web = **A system that lets many people build shared models without 
 
 ---
 
+## 📖 Original Book Text (Direct Quotes)
+
+Here's what the actual book says about these concepts. I've simplified it above, but this is the original for reference:
+
+---
+
+### **From the Book: What Models Do**
+
+> "How do models help people assemble their knowledge? Models assist in three essential ways:
+>
+> 1. **Models help people communicate.** A model describes the situation in a particular way that other people can understand.
+> 2. **Models explain and make predictions.** A model relates primitive phenomena to one another and to more complex phenomena, providing explanations and predictions about the world.
+> 3. **Models mediate among multiple viewpoints.** No two people agree completely on what they want to know about a phenomenon; models represent their commonalities while allowing them to explore their differences."
+
+---
+
+### **From the Book: The Semantic Web Stack**
+
+> "The Semantic Web provides an elegant solution to this problem. The basic idea is that any model can be built up from contributions from multiple sources.
+>
+> **RDF—The Resource Description Framework.** This is the basic framework that the rest of the Semantic Web is based on. RDF provides a mechanism for allowing anyone to make a basic statement about anything and layering these statements into a single model.
+>
+> **RDFS—The RDF Schema Language.** RDFS is a language with the expressivity to describe the basic notions of commonality and variability familiar from object languages and other class systems—namely classes, subclasses, and properties.
+>
+> **SHACL—The Shapes Constraint Language.** SHACL is a language based on the intuition that we expect data to be in a certain form, or shape. SHACL allows a modeler to represent the expected shape of a data description. These shapes can be used to validate data or to present a form to a human user to fill out to supply data. Unlike the other Semantic Web modeling languages, which are designed based on the Open World Assumption, SHACL works with the Closed World Assumption; if data is not included in a description, then it is considered to be missing. SHACL is one of the newest modeling languages in the Semantic Web stack, and became a W3C Recommendation in 2017."
+
+---
+
+### **From the Book: Fundamental Concepts**
+
+> "The following fundamental concepts were introduced in this chapter:
+>
+> • **Modeling**—Making sense of unorganized information.
+> • **Formality/informality**—The degree to which the meaning of a modeling language is given independent of the particular speaker or audience.
+> • **Commonality and variability**—When describing a set of things, some of them will have some things in common (commonality), and some will have important differences (variability). Managing commonality and variability is a fundamental aspect of modeling in general, and of Semantic Web models in particular.
+> • **Expressivity**—The ability of a modeling language to describe certain aspects of the world. More expressive modeling language can express a wider variety of statements about the model. Modeling languages of the Semantic Web—RDF, RDFS, and OWL—differ in their levels of expressivity."
+
+---
+
+### **From the Book: On Class Hierarchies**
+
+> "One of the primary organizing tools in OOP is the notion of a hierarchy of classes and subclasses. Classes high up in the hierarchy represent functionality that is common to a large number of components; classes farther down in a hierarchy represent more specific functionality.
+>
+> The Semantic Web standards also use this idea of class hierarchy for representing commonality and variability. Since the Semantic Web, unlike OOP, is not focused on software representation, classes are not defined in terms of behaviors of functions.
+>
+> Classes and subclasses are a fine way to organize variation when there is a simple, known relationship between the modeled entities and it is possible to determine a clear ordering of classes that describes these relationships. In a Web setting, however, this usually is not the case. Each contributor can have something new to say that may fit in with previous statements in a wide variety of ways."
+
+---
+
 **Date Last Updated**: 2026-09-30  
 **Chapter**: 2 (How Models Work)  
 **Confidence Level**: ⭐⭐⭐⭐⭐ (5/5 - simplified version is much clearer!)
