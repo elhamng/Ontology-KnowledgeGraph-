@@ -193,11 +193,489 @@ corp:employee123 prov:wasDerivedFrom hr_system:employee_E123 ;
 
 ---
 
+---
+
+# Chapter 4: Semantic Web Application Architecture
+
+**Source**: Semantic Web Learning Path  
+**Topic**: RDF Systems, Data Transformation, Stores, Query Engines, and Data Federation  
+**Date Added**: 2026-10-01
+
+---
+
+## 📌 Chapter Overview: From Tables to Triples to Queries
+
+This chapter answers the fundamental question: **"How does an RDF-based system actually work end-to-end?"**
+
+The architecture involves:
+1. **Getting triples into the system** (from web, databases, converters)
+2. **Storing them** (RDF stores)
+3. **Querying them** (SPARQL engines)
+4. **Federating them** (combining multiple data sources)
+5. **Semantic models** (adding meaning to the data)
+
+---
+
+## 🔍 Key Concepts Detailed
+
+### 1. **Sources of RDF Triples: Where Data Starts**
+
+**What the chapter explained:**
+> "How does an RDF-based system get started? Where do the triples come from? The simplest answer is to find them directly on the Web."
+
+**Three main sources:**
+
+#### Source 1: Web-Scraped Data (RDFa, JSON-LD)
+> "How does an RDF-based system get started? Where do the triples come from? There are a number of possible answers for this, but the simplest one is to find them directly on the Web. Google can find millions."
+
+- Some web pages already publish metadata in RDF format (RDFa standard)
+- Example: Google can index structured data from HTML pages
+- Web crawlers extract triples from published linked data
+
+#### Source 2: Relational Database Conversion
+- **The Problem**: Most data still lives in SQL databases
+- **The Solution**: Use **R2RML (RDB to RDF Mapping Language)**
+- Automatically transforms table rows → RDF triples
+
+**Example transformation:**
+```
+SQL Table: employees
+| ID   | Name  | DateOfBirth  | DepartmentID |
+|------|-------|--------------|--------------|
+| 123  | Alice | 1985-03-15   | 5            |
+| 124  | Bob   | 1990-07-22   | 7            |
+
+Becomes RDF triples:
+corp:employee123 a corp:Person ;
+    corp:hasName "Alice" ;
+    corp:hasDateOfBirth "1985-03-15"^^xsd:date ;
+    corp:worksInDepartment corp:department5 .
+
+corp:employee124 a corp:Person ;
+    corp:hasName "Bob" ;
+    corp:hasDateOfBirth "1990-07-22"^^xsd:date ;
+    corp:worksInDepartment corp:department7 .
+```
+
+#### Source 3: Streaming/Real-Time Data
+- Applications can generate triples dynamically
+- IoT sensors, event logs, streaming data converted to RDF on-the-fly
+
+**My Implementation:**
+In my KIK-V pipeline, I used all three sources:
+- Scraped healthcare data from web APIs (Source 1)
+- Converted 13 SQL tables → RDF (Source 2: R2RML mapping)
+- Dashboard generates triples from real-time events (Source 3)
+
+---
+
+### 2. **R2RML: Bridging Tables and Triples**
+
+**The Challenge:**
+> "This transformation assumed a lot about the table. It assumed that the first column, whose name was ID, was the appropriate column to use as the ID for the subject. It assumed that the names of the columns were appropriate property names. While these assumptions are pretty likely to be true in most situations, they are certainly not guaranteed. How should we map tables into RDF in other situations?"
+
+> "It is a straightforward task to produce a simple R2RML mapping from any relational database to an RDF form, and in fact, this task can and has been automated. This makes it possible to write SPARQL queries that work directly over relational databases, allowing them to act as linked data sources on the web."
+
+**The Solution: R2RML Mapping Language**
+
+R2RML is a standard language for defining how relational data maps to RDF. Instead of assumptions, you write explicit rules:
+
+```turtle
+# R2RML Mapping Definition
+@prefix rr: <http://www.w3.org/1999/02/22-rdf-syntax-ns#base> .
+@prefix corp: <http://example.org/corp/> .
+
+# Mapping for employees table
+<#EmployeeMapping> a rr:TriplesMap ;
+    rr:logicalTable [ rr:tableName "employees" ] ;
+    rr:subjectMap [
+        rr:template "http://example.org/emp/{ID}" ;  # Custom subject URI pattern
+        rr:class corp:Employee
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicate rdfs:label ;
+        rr:objectMap [ rr:column "Name" ]
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicate corp:hasDateOfBirth ;
+        rr:objectMap [
+            rr:column "DateOfBirth" ;
+            rr:datatype xsd:date
+        ]
+    ] ;
+    rr:predicateObjectMap [
+        rr:predicate corp:worksInDepartment ;
+        rr:objectMap [
+            rr:parentTriplesMap <#DepartmentMapping> ;
+            rr:joinCondition [ rr:child "DepartmentID" ; rr:parent "ID" ]
+        ]
+    ] .
+```
+
+**Benefits:**
+- ✅ Explicit mapping (not assumed)
+- ✅ Can be automated (R2RML generation tools exist)
+- ✅ Standardized (W3C standard)
+- ✅ Enables SPARQL queries directly over relational databases
+- ✅ Database acts as a linked data source without copying data
+
+**My Gap**: I haven't used R2RML formally—I hand-coded the mappings in Python. Using R2RML would make them reusable and standardized.
+
+---
+
+### 3. **RDF Stores: Where Triples Live**
+
+**Definition:**
+> "A database is a program that stores data, making them available for future use. An RDF data storage solution is no different; the RDF data are kept in a system called an RDF store. It is typical for an RDF data store to be accompanied by a parser and a serializer to populate the store and publish information from the store, respectively."
+
+> "In contrast to a relational data store, an RDF store includes as a fundamental capability the ability to merge two datasets together. Because of the flexible nature of the RDF data model, the specification of such a merge operation is clearly defined."
+
+**Key Difference from Relational Stores:**
+| Feature | SQL Database | RDF Store |
+|---------|--------------|-----------|
+| **Unit of Storage** | Rows in tables | Triples (subject-predicate-object) |
+| **Query Language** | SQL (set operations, joins) | SPARQL (graph pattern matching) |
+| **Schema** | Rigid (define before data) | Flexible (add properties anytime) |
+| **Merging Data** | Complex (requires custom ETL, schemas must match) | Built-in (simply add triples; conflicts resolved by URIs) |
+
+**The Merge Operation: A Killer Feature**
+> "The merger of two (or more) datasets is the single dataset that includes all and only the triples from the source datasets."
+
+**RDF Standards and Interoperability:**
+> "RDF stores bear considerable similarity to relational stores, especially in terms of how the quality of a store is evaluated. A notable distinction of RDF stores results from the standardization of the RDF data model and RDF/XML serialization syntax. Several competing vendors of relational data stores dominate the market today, and they have for several decades."
+
+**Example:**
+```
+Dataset 1 (HR System):
+corp:emp123 corp:hasName "Alice" .
+corp:emp123 corp:hasSalary "$100k" .
+
+Dataset 2 (Care System):
+corp:emp123 corp:assignedToProject proj:P456 .
+corp:emp123 corp:skillLevel "Expert" .
+
+Merged Graph (in RDF Store):
+corp:emp123 corp:hasName "Alice" .
+corp:emp123 corp:hasSalary "$100k" .
+corp:emp123 corp:assignedToProject proj:P456 .
+corp:emp123 corp:skillLevel "Expert" .
+
+All triples coexist because they share the same subject URI!
+```
+
+**Without URIs, merge fails:**
+- SQL merge: "Employee 123 from HR ≠ Employee 123 from Care system"—need complex join logic
+- RDF merge: Same URI = same entity, automatically merged
+
+**Popular RDF Stores:**
+- Apache Jena (Java, open-source)
+- OpenLink Virtuoso (SQL + RDF hybrid)
+- AllegroGraph (commercial, optimized for large graphs)
+- GraphDB (open-source, SPARQL + inference)
+
+**My Implementation:**
+Currently using RDF without a dedicated store (triples in turtle files + SPARQL queries on read). For production, I should migrate to a dedicated store like GraphDB.
+
+---
+
+### 4. **RDF Query Engines and SPARQL**
+
+**The Challenge: Different Query Languages**
+> "An RDF store is typically accessed using a query language. In this sense, an RDF store is similar to a relational database or an XML store. Not surprisingly, in the early days of RDF, a number of different query languages were available, each supported by some RDF-based product or open source project. From the common features of these query languages, the W3C has undertaken the process of standardizing an RDF query language called SPARQL."
+
+**SPARQL: SQL for RDF**
+
+Unlike SQL (table joins), SPARQL uses **graph pattern matching**:
+
+```sparql
+# SQL-style (relational):
+SELECT name, salary FROM employees 
+JOIN departments ON emp.dept_id = dept.id
+WHERE dept.name = "Engineering" ;
+
+# SPARQL-style (graph pattern):
+PREFIX corp: <http://example.org/corp/>
+SELECT ?name ?salary WHERE {
+    ?employee a corp:Employee ;                    # ?employee is a node
+              corp:hasName ?name ;                 # connected by hasName
+              corp:hasSalary ?salary ;             # connected by hasSalary
+              corp:worksInDepartment ?dept .
+    ?dept rdfs:label "Engineering" .
+}
+```
+
+**SPARQL Advantages:**
+- ✅ Works across multiple RDF stores
+- ✅ Can query remote SPARQL endpoints (federated queries)
+- ✅ Pattern-based (more natural for graph data)
+- ✅ Includes aggregate functions (COUNT, SUM, etc.)
+
+**SPARQL Endpoints: APIs for RDF**
+> "The SPARQL query language includes a protocol for communicating queries and results so that a query engine can act as a web service. This provides another source of data for the Semantic Web—the so-called SPARQL endpoints provide access to large amounts of structured RDF data. It is even possible to provide SPARQL access to databases that are not triple stores, effectively translating SPARQL queries into the query language of the underlying store. The W3C has recently begun the process to standardize a translation from SPARQL to SQL for relational stores."
+
+**Examples:**
+- Wikidata SPARQL endpoint: `https://query.wikidata.org/`
+- DBpedia: `https://dbpedia.org/sparql`
+- Any HTTP API can expose SPARQL
+
+**Real-World Impact:**
+The W3C is standardizing **SPARQL-to-SQL translation**, so you can query a legacy SQL database using SPARQL without copying data!
+
+**Comparison to Relational Queries:**
+> "In many ways, an RDF query engine is very similar to the query engine in a relational data store: It provides a standard interface to the data and defines a formalism by which data are viewed. A relational query language is based on the relational algebra of joins and foreign key references. RDF query languages look more like statements in predicate calculus. Unification variables are used to express constraints between the patterns."
+
+**My Gap**: I've been writing SPARQL queries manually. I should learn SPARQL more systematically and potentially expose my graph via a SPARQL endpoint for stakeholders to query.
+
+---
+
+---
+
+### 5. **Data Federation: The Semantic Web's Killer Feature**
+
+**The Core Idea:**
+> "The RDF data model was designed from the beginning with data federation in mind. Information from any source is converted into triples, so data federation of any kind—spreadsheets, XML, databases, web pages—is accomplished with a single mechanism."
+
+**Two Federation Strategies:**
+
+#### Strategy 1: Query-Time Federation (What most apps do)
+```
+App Query
+    ↓
+SQL Engine (queries HR database) → Results
+SQL Engine (queries Finance database) → Results
+SQL Engine (queries Care database) → Results
+    ↓
+App combines results manually
+```
+**Problems:**
+- App must know about each data source
+- Custom query logic for each source
+- Adding a new data source breaks existing code
+- Slow (queries run sequentially)
+
+#### Strategy 2: Store-Time Federation (RDF Approach)
+```
+HR Database → Convert to RDF ↘
+Finance Database → Convert to RDF → Merge into single RDF store
+Care Database → Convert to RDF ↗
+    ↓
+Single SPARQL Query over federated graph
+    ↓
+Results (data from all sources, unified view)
+```
+**Advantages:**
+- ✅ Single query interface (SPARQL)
+- ✅ Adding new data sources doesn't break queries
+- ✅ Merge is automatic (same URIs are linked)
+- ✅ No custom ETL for each pair
+- ✅ Faster (queries optimized on single store)
+
+**Core Architecture Principle:**
+> "RDF does not refer to a file format or a particular language for encoding data but rather to the data model of representing information in triples. It is this feature of RDF that allows data to be federated in this way. The mechanism for merging this information, and the details of the RDF data model, can be encapsulated into a piece of software—the RDF store—to be used as a building block for applications. The strategy of federating information first and then querying the federated information store separates the concerns of data federation from the operational concerns of the application. Queries written in the application need not know where a particular triple came from. This allows a single query to seamlessly operate over multiple data sources without elaborate planning on the part of the query author. This also means that changes to the application to federate further data sources will not impact the queries in the application itself."
+
+**The Federated Graph Concept:**
+> "In our discussion of RDF Schema (RDFS) and Web Ontology language (OWL), we will assume that any federation necessary for the application has already taken place; that is, all queries and inferences will take place on the federated graph. The federated graph is simply the graph that includes information from all the federated data sources over which application queries will be run."
+
+**My Implementation (KIK-V Project):**
+Exactly this pattern!
+```
+Employee table (SQL) → corp:Employee RDF instances
+Project table (SQL) → corp:Project RDF instances
+Assignment table (SQL) → corp:Assignment RDF instances
+    ↓
+Merge in validation-dashboard graph (the federated graph)
+    ↓
+Single SPARQL query: "Show me all assignments for employees in department 5"
+```
+
+---
+
+### 6. **Semantic Models: Adding Meaning via Metadata**
+
+**The Problem:**
+> "When we federate information from multiple sources, the RDF data model allows us to represent all the data in a single, uniform way. But it does nothing to resolve any conflicts of meaning between the sources. Do two states have the same definitions of 'marriage'? Is the notion of 'writing' a play the same as the notion of 'writing' a song? It is the semantic models that give answers to questions like these. A semantic model acts as a sort of glue between disparate, federated data sources so we can describe how they fit together."
+
+**The Solution: Semantic Models**
+
+A semantic model is **metadata about the data** that resolves meaning conflicts:
+
+```turtle
+# Source 1 (System A) defines "marriage":
+corp:Person marriage corp:Person .    # Any relationship
+
+# Source 2 (System B) defines "marriage":
+corp:Person marriage corp:Person ;
+    legal:recognizedByGovernment true ;
+    legal:duration "until death or divorce" .
+
+# Semantic Model resolves the conflict:
+corp:formalMarriage rdfs:subClassOf corp:marriage ;
+    owl:equivalentClass legal:LegalMarriage .
+
+# Now queries can ask: "All relationships including legal marriages"
+```
+
+**Semantic Models Include:**
+- **Class hierarchies**: `Employee` is-a `Person`
+- **Property definitions**: `hasAge` domain `Person`, range `xsd:int`
+- **Constraints**: `Employee` must have exactly 1 `hasEmploymentDate`
+- **Equivalences**: `corp:Person owl:equivalentClass foaf:Person` (link to external ontologies)
+- **Inference rules**: If `X worksFor Y` and `Y locatedIn Z`, then `X worksIn Z`
+
+**Who defines semantic models?**
+> "Just as Anyone can say Anything about Any topic, so also can anyone say anything about a model; that is, anyone can contribute to the definition and mapping between information sources. In this way, not only can a federated, RDF-based, semantic application get its information from multiple sources, but it can even get the instructions on how to combine information from multiple sources. In this way, the SemanticWeb really is a web of meaning, with multiple sources describing what the information on the Web means."
+
+**This is key to the Semantic Web vision**: No central authority. Multiple stakeholders (systems, organizations) can all contribute to defining meaning, and through shared URIs, they link their definitions together.
+
+**My Implementation:**
+My OWL ontology IS a semantic model:
+- Defines 25 core classes (Employee, Project, etc.)
+- Defines constraints and cardinality
+- Different "profiles" for different stakeholders
+- Enables both data validation and inference
+
+---
+
+## 🏗️ Complete System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Application Interface                     │
+│              (Dashboard, API, Reports, etc.)                │
+└──────────────────────┬──────────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  SPARQL Query Engine                         │
+│      (Understands graph patterns, optimization)             │
+└──────────────────────┬──────────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  RDF Store (Graph Database)                  │
+│         ┌────────────────────────────────────┐             │
+│         │  Federated RDF Graph               │             │
+│         │  (All triples merged, unified view)│             │
+│         └────────────────────────────────────┘             │
+└──────────┬──────────────────┬──────────────────┬────────────┘
+           ↓                  ↓                  ↓
+    ┌────────────────┐┌─────────────────┐┌──────────────────┐
+    │  HR Database   ││ Finance DB      ││ Care System      │
+    │  (Relational)  ││ (Relational)    ││ (JSON API)       │
+    └────────────────┘└─────────────────┘└──────────────────┘
+           ↓                  ↓                  ↓
+    ┌────────────────┐┌─────────────────┐┌──────────────────┐
+    │  R2RML Parser  ││ R2RML Parser    ││ Converter        │
+    │  (SQL→RDF)     ││ (SQL→RDF)       ││ (JSON→RDF)       │
+    └────────────────┘└─────────────────┘└──────────────────┘
+           ↓                  ↓                  ↓
+    ┌──────────────────────────────────────────────────────┐
+    │       Semantic Model (OWL Ontology)                  │
+    │  - Defines classes, properties, constraints          │
+    │  - Links to external ontologies (foaf, schema.org)   │
+    │  - Enables inference rules                           │
+    └──────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🧠 Study Guide: Understanding the Flow
+
+**Question 1: How do triples enter the system?**
+*Answer*: From three sources:
+1. Direct RDF extraction (RDFa from web)
+2. R2RML conversion (SQL tables → triples)
+3. Real-time generation (applications emit triples)
+
+**Question 2: Why can we merge data from different sources automatically?**
+*Answer*: Because URIs are globally unique. `corp:emp123` means the same thing everywhere. When an RDF store sees the same URI from two sources, it automatically merges all triples about that URI into one. With SQL tables, you need explicit join logic and schema matching.
+
+**Question 3: How is SPARQL different from SQL?**
+*Answer*:
+- **SQL**: "Join these tables on foreign keys, filter by conditions, return columns"
+- **SPARQL**: "Find all graph patterns matching this template, return matching nodes"
+- SPARQL is more natural for graph data because it expresses relationships directly (subject-predicate-object) rather than through join operations
+
+**Question 4: What problem does a semantic model solve?**
+*Answer*: When merging data from multiple sources, you have conflicts in meaning. Semantic models (ontologies) document these conflicts and provide mapping rules. They're metadata that says: "Here's how System A's definition of 'marriage' relates to System B's definition."
+
+**Question 5: How does data federation separate concerns?**
+*Answer*: Instead of:
+- Application knows about HR database AND Finance database AND Care system
+- Application writes custom query logic for each
+- Adding a new source requires rewriting application code
+
+You get:
+- Data sources converted to RDF once (R2RML)
+- Merged into one federated graph
+- Application queries the graph (no knowledge of sources)
+- Adding new source: just convert it and merge
+
+---
+
+## 🔗 Connection to My KIK-V Project
+
+**How the architecture applies:**
+
+| Component | My Implementation |
+|-----------|-------------------|
+| **Data Sources** | HR SQL DB, Care SQL DB, Finance API, Web scraped data |
+| **Conversion** | Python scripts (custom, should migrate to R2RML) |
+| **RDF Store** | Currently: Turtle files + in-memory graph (should migrate to GraphDB) |
+| **Query Engine** | SPARQL queries written manually in Python |
+| **Semantic Model** | OWL ontology (`corp:` namespace, 25 classes) |
+| **Federation** | All data merged into `validation-dashboard` graph |
+| **Application Interface** | Web dashboard displaying merged graph |
+
+**Gaps to Address:**
+1. ❌ Not using R2RML (manual mappings)
+2. ❌ No dedicated RDF store (should use GraphDB or Jena)
+3. ⚠️ Limited SPARQL endpoint exposure (should publish SPARQL endpoint for stakeholders)
+4. ⚠️ Semantic model is basic (should add more inference rules)
+5. ✅ Data federation working well (all sources merged correctly)
+
+---
+
+## 💡 Key Insights from This Chapter
+
+| Insight | Why It Matters |
+|---------|----------------|
+| **URIs enable automatic merging** | Two systems can independently reference `corp:emp123`, and when merged, all data about that employee automatically comes together. No join logic needed. |
+| **R2RML makes conversion standard** | Instead of custom SQL→RDF scripts, use declarative mappings that can be reused and automated. |
+| **SPARQL decouples apps from sources** | App queries the semantic graph, not the underlying databases. Adds a source = just add triples. |
+| **Semantic models resolve meaning conflicts** | Metadata about the data allows you to document how different sources define the same concepts. |
+| **Data federation separates concerns** | One team converts sources to RDF, another team queries the federated graph. Clear separation of responsibilities. |
+
+---
+
+## 📚 Fundamental Concepts Summary (From Chapter 4)
+
+The chapter summarizes these core concepts:
+
+> "**RDF parser/serializer**—A system component for reading and writing RDF in one of several file formats.
+> 
+> **RDF store**—A database that works in RDF. One of its main operations is to merge RDF graphs.
+> 
+> **RDF query engine**—This provides access to an RDF store, much as an SQL engine provides access to a relational store.
+> 
+> **SPARQL**—The W3C standard query language for RDF.
+> 
+> **SPARQL endpoint**—An application that can answer a SPARQL query, including one where the native encoding of information is not in RDF.
+> 
+> **Application interface**—The part of the application that uses the content of an RDF store in an interaction with some user.
+> 
+> **Converter**—A tool that converts data from some form (for example, tables) into RDF.
+> 
+> **RDFa**—Standard for encoding and retrieving RDF metadata from HTML pages."
+
+---
+
 ## 🎯 Practical Next Steps
 
-1. ✅ **Completed**: Understand RDF triples and URI fundamentals
-2. **In Progress**: Deepen OWL ontology design (cardinality, inheritance, constraints)
-3. **Next**: Learn SPARQL query language for complex graph queries
+1. ✅ **Completed**: Understand RDF triples, URIs, ontologies
+2. ✅ **Completed**: Understand RDF system architecture (stores, query engines, federation)
+3. **In Progress**: Formalize R2RML mappings for my SQL→RDF conversions
+4. **Next**: Publish SPARQL endpoint for validation-dashboard graph
+5. **Next**: Learn inference rules (SHACL, forward-chaining with OWL)
+6. **Next**: Migrate from in-memory graph to dedicated RDF store (GraphDB)
 4. **Goal**: Design a public linked data endpoint for corporate data
 
 ---
