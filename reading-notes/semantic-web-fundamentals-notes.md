@@ -194,7 +194,22 @@ corp:employee123 prov:wasDerivedFrom hr_system:employee_E123 ;
 ---
 
 ---
+# Chapter 2: How Models Help People Understand Each Other
 
+**Date Started**: 2026-09-30  
+**Topic**: Why we need shared models
+
+---
+
+## 📌 Chapter 2 Key Concept (In Plain English)
+
+A **model** is like a shared instruction manual that helps everyone understand the same thing the same way.
+
+Think of it like this: If you and your friend need to build something, you both need to follow the SAME blueprint. Otherwise, you build different things.
+
+The Semantic Web is a system that lets MANY people contribute to ONE shared blueprint, even if they disagree about details.
+
+---
 
 ## 🔍 Detailed Notes - Chapter 2 (SIMPLIFIED)
 
@@ -1342,19 +1357,3 @@ The chapter summarizes these core concepts:
 
 ---
 
-# Chapter 2: How Models Help People Understand Each Other
-
-**Date Started**: 2026-09-30  
-**Topic**: Why we need shared models
-
----
-
-## 📌 Chapter 2 Key Concept (In Plain English)
-
-A **model** is like a shared instruction manual that helps everyone understand the same thing the same way.
-
-Think of it like this: If you and your friend need to build something, you both need to follow the SAME blueprint. Otherwise, you build different things.
-
-The Semantic Web is a system that lets MANY people contribute to ONE shared blueprint, even if they disagree about details.
-
----
