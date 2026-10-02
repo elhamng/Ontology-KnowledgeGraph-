@@ -1353,7 +1353,554 @@ The chapter summarizes these core concepts:
 4. **Next**: Publish SPARQL endpoint for validation-dashboard graph
 5. **Next**: Learn inference rules (SHACL, forward-chaining with OWL)
 6. **Next**: Migrate from in-memory graph to dedicated RDF store (GraphDB)
-4. **Goal**: Design a public linked data endpoint for corporate data
+7. **Goal**: Design a public linked data endpoint for corporate data
+
+---
+
+# Chapter 5: Linked Data on the Web
+
+**Source**: Semantic Web Learning Path  
+**Topic**: Publishing RDF Data, URI Dereferencing, HTTP Architecture, Linked Data Principles  
+**Date Added**: 2026-10-02
+
+---
+
+## 📌 Chapter Overview: From RDF to Linked Data
+
+This chapter explains the crucial difference between just having RDF data and **publishing it as linked data on the Web**.
+
+> "A Web of data consists of data from around the world that is linked together so that it can be found, browsed, crawled, integrated, and so on. In a Web of data, the core idea is linked data, that is, datasets (and data elements in them) linked across the WWW in the same way web pages, web sites, and anchored texts are linked across the World Wide Web."
+
+---
+
+## 1. **"Data on the Web" vs. "Web of Data"**
+
+### Data on the Web (Traditional)
+```
+1. You create a CSV file
+2. Upload it to a website
+3. People download it manually
+4. Each person processes it differently
+```
+
+**Problem**: No automated linking. Each copy is independent. No machine can discover relationships.
+
+### Web of Data (Linked Data Vision)
+```
+1. You create RDF data using HTTP URIs
+2. Publish it on the Web with SPARQL endpoints
+3. Systems discover it automatically
+4. Same URIs = automatic merging across sources
+```
+
+**Advantage**: Machine-readable. Self-describing. Discoverable.
+
+### The Core Difference
+
+| Aspect | Data on Web | Web of Data |
+|--------|-------------|-----------|
+| **Format** | Any (CSV, PDF, XLS) | RDF (machine-readable) |
+| **Linking** | Manual (download, process) | Automatic (follow URIs) |
+| **Discovery** | Manual search | Crawl like Google crawls HTML |
+| **Merging** | Custom ETL per pair | Automatic via shared URIs |
+| **Scale** | 1-10 sources manageable | 1000s of sources feasible |
+
+---
+
+## 2. **The Three Principles of Linked Data**
+
+> "1. Use HTTP URIs to name everything: Just as URLs were introduced to address and locate resources on the Web, the Web of data uses URIs to name the things it describes. But by using HTTP URIs we can also provide a default mechanism to obtain descriptions.
+>
+> 2. When an agent accesses an HTTP URI, the server must provide descriptive information about the resource identified by that URI using the Web standard languages, in particular RDF and its syntaxes.
+>
+> 3. In the descriptive data it provides, a server must include links to HTTP URIs of other things so that Web clients can discover more things by looking up these new HTTP URIs recursively at will."
+
+**Translation:**
+
+1. **Everything has a URI**: Use HTTP URIs (not just local IDs)
+   ```
+   ❌ Bad: emp_id = 123
+   ✅ Good: http://example.org/employees/emp123
+   ```
+
+2. **URIs are dereferenceable**: You can look them up and get data back
+   ```
+   curl http://example.org/employees/emp123
+   # Returns RDF description of employee 123
+   ```
+
+3. **Data links to other URIs**: Enable crawling
+   ```
+   emp123 worksAt hospital456
+   hospital456 locatedIn region789
+   # → Can crawl from emp123 → hospital456 → region789
+   ```
+
+---
+
+## 3. **HTTP URIs: The Foundation**
+
+### Why HTTP URIs?
+
+HTTP URIs have TWO functions:
+
+1. **As Names** (Identification)
+   ```
+   http://example.org/employees/emp123
+   This identifies a specific employee (like a social security number)
+   ```
+
+2. **As Locations** (Dereferencing)
+   ```
+   curl http://example.org/employees/emp123
+   This retrieves data about that employee
+   ```
+
+**Other URI schemes lack the "location" property:**
+```
+urn:uuid:550e8400-e29b-41d4-a716-446655440000  # Identifier, but not dereferenceable
+mailto:alice@example.org                        # Dereferenceable, but not for data
+```
+
+### Real-World Examples
+
+From the text:
+
+```
+• URI for Paris in DBpedia: 
+  http://dbpedia.org/resource/Paris
+
+• URI for protein MUC18 in UniProt: 
+  http://www.uniprot.org/uniprot/P43121
+
+• URI for Victor Hugo in Library of Congress: 
+  http://id.loc.gov/authorities/names/n79091479
+
+• URI for Xavier Dolan in Wikidata: 
+  http://www.wikidata.org/entity/Q551861
+
+• URI for Fabien Gandon at Inria: 
+  http://ns.inria.fr/fabien.gandon#me
+```
+
+**Key insight**: All can be dereferenced. Try it in your browser!
+
+---
+
+## 4. **URI Design: Hash (#) vs. Slash (/)**
+
+When you design URIs for non-web resources, two patterns compete:
+
+### Hash URIs
+```
+http://example.org/employees#emp123
+```
+
+**Dereferencing:**
+- Browser requests: `http://example.org/employees` (removes the #fragment)
+- Server returns: Document containing description of emp123
+- Benefit: Fewer HTTP requests (all employees in one document)
+- Drawback: Less granular (one HTTP response for multiple employees)
+
+### Slash URIs
+```
+http://example.org/employees/emp123
+```
+
+**Dereferencing:**
+- Browser requests: `http://example.org/employees/emp123`
+- Server returns: Description of emp123 only
+- Benefit: Granular (one HTTP response per employee)
+- Drawback: More HTTP requests needed
+
+### Content Negotiation (Both Work!)
+
+You can support both using **content negotiation**:
+
+```
+curl -H "Accept: application/rdf+xml" \
+     http://example.org/employees/emp123
+# Returns RDF/XML format
+
+curl -H "Accept: application/ld+json" \
+     http://example.org/employees/emp123
+# Returns JSON-LD format
+
+curl -H "Accept: text/turtle" \
+     http://example.org/employees/emp123
+# Returns Turtle format
+```
+
+---
+
+## 5. **URI Persistence: The Domain Name Problem**
+
+> "Therefore, one must be careful in choosing the domain name for the host part of a URI pattern one uses as identifiers in publishing linked data because it is key to ensure persistence and control of dereferenceable URIs."
+
+**Bad scenario:**
+```
+You create URIs: http://mycompany.com/employees/emp123
+After 5 years, mycompany.com is sold
+New owner takes over mycompany.com
+Your URIs break or point to wrong data
+```
+
+**Solution:**
+Use a domain you CONTROL and will keep stable:
+
+| Option | Example | Risk |
+|--------|---------|------|
+| **Persistent ID service** | http://purl.org/healthcare/emp123 | PURL managed by library of Congress; very stable |
+| **Non-profit domain** | http://w3.org/ontology/emp123 | W3C owns w3.org; will exist long-term |
+| **Organization permanent domain** | http://example.org/employees/emp123 | Depends on organization commitment |
+| **Personal domain** | http://myname.com/... | You must renew domain every year |
+
+### Real Example: UniProt
+
+> "UniProt's service provides a good example of URI redirection. The persistent URI is http://purl.uniprot.org/uniprot/P43121. When this HTTP URI is accessed by a Web browser for a human, the response is a redirection to https://www.uniprot.org/uniprot/P43121"
+
+**Why?**
+- Uses persistent purl.uniprot.org for stable URIs
+- Redirects to uniprot.org for human browsing
+- If UniProt moves servers, only the domain changes (unlikely)
+
+---
+
+## 6. **Real-World Linked Data Examples**
+
+### DBpedia: Wikipedia as Data
+
+> "DBpedia is a crowd-sourced community effort to extract structured content from the information created in various Wikimedia projects. This includes the famous Wikipedia encyclopedia. This initiative extracts and publishes structured data from the pages of Wikipedia and other Wikimedia projects."
+
+**How it works:**
+
+```
+Wikipedia page: https://en.wikipedia.org/wiki/Paris
+                (HTML, human-readable)
+                    ↓
+DBpedia extracts: Infobox, structured data
+                    ↓
+RDF URIs:         http://dbpedia.org/resource/Paris
+                    ↓
+Query with SPARQL: https://dbpedia.org/sparql
+SELECT ?capital WHERE { 
+    dbpedia:France dbp:capital ?capital . 
+}
+# Result: dbpedia:Paris
+```
+
+### UniProt: Protein Data
+
+UniProt publishes ~21 million protein sequences as linked data:
+
+```
+URI: http://purl.uniprot.org/uniprot/P43121
+Protein: MUC18 (Cell surface glycoprotein)
+
+Dereference → Returns RDF:
+<P43121>
+  rdf:type                  uniprot:Protein ;
+  dc:title                  "Cell surface glycoprotein MUC18" ;
+  uniprot:sequence          "MKVHVLAPAI..." ;
+  uniprot:mass              115214 ;
+  uniprot:organism          <organism/9606> .
+```
+
+Scientists can query this automatically, no manual copy-paste.
+
+---
+
+## 7. **The Ratatouille Metaphor: Cooking Linked Data**
+
+> "The overall process for producing and consuming linked data on the Web may also be explained using a secret of ratatouille recipe. To obtain a perfect ratatouille dish as cooked in the south of France one of the tricks is to cook each vegetable separately (stage 1). Once each one is properly cooked, the chef mixes them and cooks the ratatouille as one dish (stage 2). Ratatouille is such a versatile dish, that it can be used as an ingredient for other dishes as shown in (stage 3)."
+
+**Three Stages:**
+
+#### Stage 1: Prepare Each Source Separately
+```
+Your HR system  → Convert to RDF → Publish at http://example.org/hr/
+Your Finance DB → Convert to RDF → Publish at http://example.org/finance/
+Your Care system → Convert to RDF → Publish at http://example.org/care/
+```
+
+Each data provider:
+- Decides what data to share (sensitive/anonymity)
+- Handles their own volume/velocity constraints
+- Uses their own infrastructure
+
+#### Stage 2: Mix and Cook (Federation)
+```
+Researcher aggregates all three:
+  SELECT ?employee ?salary ?assignment
+  WHERE {
+    ?emp a corp:Employee .
+    SERVICE <http://example.org/hr/sparql>       { ?emp hasName ?name . }
+    SERVICE <http://example.org/finance/sparql>  { ?emp hasSalary ?salary . }
+    SERVICE <http://example.org/care/sparql>     { ?emp assignedTo ?assignment . }
+  }
+```
+
+**Result**: New integrated dataset (the ratatouille!)
+
+#### Stage 3: Reuse as Ingredient
+```
+Researcher publishes new dataset:
+  http://myresearch.org/analysis/2024/
+  
+  This becomes a data source for others to use
+  
+Other researchers → Query researcher's data → Publish new findings
+```
+
+**Chain of value**: Data → Analysis → New Data → New Analysis → ...
+
+---
+
+## 8. **Linked Data Platform (LDP): REST Architecture**
+
+> "Following the success of REST, the W3C has defined the Linked Data Platform (LDP), which specifies how Web applications can publish, edit, and delete data resources using the HTTP protocol. LDP is a standardized specification of how to use REST access to linked data, describing how to build clients and servers that create, read, and write linked data resources."
+
+### LDP Concepts
+
+**REST Principles Applied to Linked Data:**
+
+| HTTP Verb | LDP Operation | Example |
+|-----------|--------------|---------|
+| **GET** | Read data | `GET /employees/emp123` → Returns RDF |
+| **POST** | Create new resource | `POST /employees` with new RDF → Returns URI |
+| **PUT** | Replace resource | `PUT /employees/emp123` with new RDF → Updates |
+| **PATCH** | Partial update | `PATCH /employees/emp123` → Modify one property |
+| **DELETE** | Remove resource | `DELETE /employees/emp123` → Deletes |
+
+### LDP Containers
+
+LDP introduces **containers** (collections):
+
+```
+GET /employees
+→ Returns: List of all employee URIs
+→ Format: RDF collection or container
+
+POST /employees
+→ Creates new employee
+→ Returns: New URI like /employees/emp456
+```
+
+**Benefits:**
+- Standard way to CRUD linked data
+- Supports content negotiation (RDF/XML, Turtle, JSON-LD)
+- Machine-discoverable structure
+
+---
+
+## 9. **Practical: Example URI Minting for Healthcare Data**
+
+Given the vaccine records table from the text:
+
+```
+ID      Species  Name     Expiration
+366863  dog      Fido     2020
+851903  dog      Bastian  2021
+775304  cat      Mytsie   2019
+```
+
+### Simple URI Pattern (Not Recommended)
+
+```
+http://example.org/vac/366863/dog/Fido/2020
+http://example.org/vac/851903/dog/Bastian/2021
+http://example.org/vac/775304/cat/Mytsie/2019
+```
+
+**Problems:**
+- Too specific (if name changes, URI changes)
+- Reveals personal data (pet name, owner in expiration)
+- Long and unmanageable
+
+### Better URI Pattern
+
+```
+http://example.org/vaccinations/vac-366863
+http://example.org/vaccinations/vac-851903
+http://example.org/vaccinations/vac-775304
+```
+
+**Better, but:**
+- Still depends on ID field staying constant
+- Requires documentation about what ID means
+
+### Best URI Pattern
+
+```
+http://example.org/pets/fido-366863
+http://example.org/pets/bastian-851903
+http://example.org/pets/mytsie-775304
+```
+
+**Dereference returns RDF:**
+```turtle
+<http://example.org/pets/fido-366863>
+  a :VaccineRecord ;
+  :forPet <http://example.org/pets/fido> ;
+  :vaccineType :Rabies ;
+  :expirationDate "2020-12-31"^^xsd:date .
+
+<http://example.org/pets/fido>
+  a :Pet ;
+  :species :Dog ;
+  :name "Fido" ;
+  :owner <http://example.org/owners/john-doe> .
+```
+
+---
+
+## 10. **My KIK-V Implementation Gap: Linked Data Exposure**
+
+Currently, my validation dashboard:
+- ✅ Converts SQL → RDF (internal)
+- ✅ Queries with SPARQL (internal)
+- ❌ Does NOT publish as linked data on Web
+- ❌ No HTTP URIs for external linking
+- ❌ No SPARQL endpoint exposed
+- ❌ No content negotiation
+
+**To become a Web of Data source:**
+
+1. ✅ Assign HTTP URIs to all employees:
+   ```
+   http://example.org/corp/employees/emp123
+   ```
+
+2. ✅ Deploy SPARQL endpoint:
+   ```
+   http://example.org/corp/sparql
+   ```
+
+3. ✅ Support content negotiation:
+   ```
+   curl -H "Accept: text/turtle" \
+        http://example.org/corp/employees/emp123
+   # Returns Turtle
+   
+   curl -H "Accept: application/ld+json" \
+        http://example.org/corp/employees/emp123
+   # Returns JSON-LD
+   ```
+
+4. ✅ Document ontology at accessible URIs:
+   ```
+   http://example.org/corp/ontology#Employee
+   http://example.org/corp/ontology#hasSalary
+   (Let people dereference and understand my schema)
+   ```
+
+5. ✅ Link to external ontologies:
+   ```
+   corp:Employee owl:equivalentClass foaf:Person
+   (Enable external systems to understand my data)
+   ```
+
+---
+
+## 📚 Study Guide: Key Concepts
+
+**Q1: What's the difference between "data on the Web" and "Web of data"?**
+
+*A*: 
+- Data on Web: Files on a server (CSV, PDF). No automatic linking. Manual integration.
+- Web of Data: RDF data with HTTP URIs. Automatic linking. Machines can discover and merge.
+
+**Q2: Why use HTTP URIs instead of just IDs?**
+
+*A*: HTTP URIs serve dual purpose:
+1. **As identifiers**: Like social security numbers
+2. **As locators**: Can dereference (look up) to get data
+
+Regular IDs do #1 but not #2.
+
+**Q3: What does dereferencing mean?**
+
+*A*: Looking up an HTTP URI and getting back RDF data describing it.
+
+```
+GET http://example.org/employees/emp123
+→ Returns RDF triples about emp123
+```
+
+**Q4: Should I use hash URIs or slash URIs?**
+
+*A*: Both work. Slash URIs are more common:
+- **Slash**: One HTTP request per resource (more granular)
+- **Hash**: One HTTP request for multiple resources (more efficient)
+
+Use slash URIs unless you have many small resources.
+
+**Q5: Why is domain name persistence important?**
+
+*A*: URIs live forever in other people's data. If you change domain:
+- All references break
+- External systems point to wrong place
+- Your linked data becomes "dead links"
+
+Use stable domain (purl.org, w3.org, or organization permanent domain).
+
+**Q6: How does UniProt maintain stable URIs when they move servers?**
+
+*A*: Uses persistent identifier service (purl.uniprot.org) that redirects:
+```
+http://purl.uniprot.org/uniprot/P43121
+    ↓ (HTTP redirect)
+https://www.uniprot.org/uniprot/P43121
+```
+
+If they move, only the redirect changes, not the URI.
+
+---
+
+## 🔗 Connection to KIK-V Project
+
+**Current State:**
+- Have RDF data ✅
+- Have SPARQL queries ✅
+- NOT published as linked data ❌
+
+**To Make Linked Data:**
+1. Choose stable domain for URIs
+2. Publish SPARQL endpoint
+3. Enable content negotiation
+4. Document ontology
+5. Link to external standards
+
+**Timeline:**
+- Phase 1 (Current): Internal RDF system (done)
+- Phase 2 (Next): Publish as linked data endpoint
+- Phase 3 (Future): Link to industry standards (healthcare, finance ontologies)
+
+---
+
+## 💡 Key Insights from Chapter 5
+
+| Insight | Why It Matters |
+|---------|----------------|
+| **Linked data is about URIs** | Same URIs = automatic merging across web |
+| **HTTP URIs enable discovery** | Machines can crawl like they crawl HTML |
+| **Dereferencing powers integration** | Follow URIs to discover new data automatically |
+| **Domain persistence is critical** | URIs last longer than systems; choose wisely |
+| **Three principles enable the Web** | Use URIs, publish RDF, link to other URIs |
+| **Ratatouille metaphor** | Prepare separately, mix, reuse as ingredient |
+
+---
+
+## 🎯 Practical Next Steps
+
+1. ✅ **Completed**: Understand RDF and OWL (Chapters 1-3)
+2. ✅ **Completed**: Understand system architecture (Chapter 4)
+3. ✅ **Completed**: Understand linked data principles (Chapter 5)
+4. **Next**: Publish validation-dashboard as linked data endpoint
+5. **Next**: Design stable URI scheme for all entities
+6. **Next**: Set up content negotiation (RDF, Turtle, JSON-LD)
+7. **Next**: Document and dereference ontology URIs
+8. **Future**: Link to external ontologies (schema.org, FOAF, industry standards)
 
 ---
 
